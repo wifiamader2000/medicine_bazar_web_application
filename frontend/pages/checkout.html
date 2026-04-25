@@ -54,6 +54,7 @@
   <script>
   let cartData = null, selectedPayment = 'cod';
   document.addEventListener('DOMContentLoaded', async () => {
+    MB.loadUser();
     if (!MB.isLoggedIn()) { window.location.href = '/login?redirect=/checkout'; return; }
     const res = await MB.get('/cart');
     if (!res.success || !res.data.items || res.data.items.length === 0) { window.location.href = '/cart'; return; }

@@ -1,5 +1,6 @@
 /* Admin Panel JS */
 (function() {
+  MB.loadUser();
   if (!MB.isLoggedIn() || !MB.isStaff()) {
     window.location.href = '/login?redirect=/admin';
     return;

@@ -1,6 +1,10 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const DataService = require('../backend/services/DataService');
+const extendedMedicines = require('./medicine-data-extended');
+const extendedMedicines2 = require('./medicine-data-extended-2');
+const extendedMedicines3 = require('./medicine-data-extended-3');
+const extendedMedicines4 = require('./medicine-data-extended-4');
 
 const medicines = [
   // PAIN & FEVER
@@ -123,7 +127,7 @@ function seed() {
   const store = DataService.get('products');
   const existing = store.findAll({});
 
-  if (existing.length >= 50) {
+  if (existing.length >= 400) {
     console.log(`Already have ${existing.length} products. Skipping medicine seed.`);
     console.log('To re-seed, clear the products file first.');
     return;
@@ -132,7 +136,10 @@ function seed() {
   let added = 0;
   let skipped = 0;
 
-  for (const med of medicines) {
+  const allMedicines = [...medicines, ...extendedMedicines, ...extendedMedicines2, ...extendedMedicines3, ...extendedMedicines4];
+  console.log(`Processing ${allMedicines.length} medicine entries...`);
+
+  for (const med of allMedicines) {
     const isDup = existing.some(e =>
       e.name?.toLowerCase() === med.name.toLowerCase() &&
       e.strength === med.strength &&
@@ -146,14 +153,14 @@ function seed() {
     store.create({
       ...med,
       stockQuantity: Math.floor(Math.random() * 500) + 50,
-      batchNumber: 'B' + Date.now().toString(36).toUpperCase().slice(-6),
+      batchNumber: 'B' + (Date.now() + added).toString(36).toUpperCase().slice(-6) + added.toString(36).toUpperCase(),
       expiryDate: new Date(Date.now() + (365 + Math.floor(Math.random() * 365)) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       active: true,
       featured: Math.random() > 0.7,
       soldCount: Math.floor(Math.random() * 100),
       imageUrl: '/assets/images/medicine-placeholder.svg',
       images: [],
-      slug: med.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      slug: med.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
     });
     added++;
   }

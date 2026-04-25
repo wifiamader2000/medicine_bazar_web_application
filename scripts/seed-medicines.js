@@ -153,14 +153,14 @@ function seed() {
     store.create({
       ...med,
       stockQuantity: Math.floor(Math.random() * 500) + 50,
-      batchNumber: 'B' + Date.now().toString(36).toUpperCase().slice(-6),
+      batchNumber: 'B' + (Date.now() + added).toString(36).toUpperCase().slice(-6) + added.toString(36).toUpperCase(),
       expiryDate: new Date(Date.now() + (365 + Math.floor(Math.random() * 365)) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       active: true,
       featured: Math.random() > 0.7,
       soldCount: Math.floor(Math.random() * 100),
       imageUrl: '/assets/images/medicine-placeholder.svg',
       images: [],
-      slug: med.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      slug: med.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
     });
     added++;
   }

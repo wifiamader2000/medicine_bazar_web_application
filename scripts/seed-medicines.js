@@ -1,6 +1,10 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const DataService = require('../backend/services/DataService');
+const extendedMedicines = require('./medicine-data-extended');
+const extendedMedicines2 = require('./medicine-data-extended-2');
+const extendedMedicines3 = require('./medicine-data-extended-3');
+const extendedMedicines4 = require('./medicine-data-extended-4');
 
 const medicines = [
   // PAIN & FEVER
@@ -123,7 +127,7 @@ function seed() {
   const store = DataService.get('products');
   const existing = store.findAll({});
 
-  if (existing.length >= 50) {
+  if (existing.length >= 400) {
     console.log(`Already have ${existing.length} products. Skipping medicine seed.`);
     console.log('To re-seed, clear the products file first.');
     return;
@@ -132,7 +136,10 @@ function seed() {
   let added = 0;
   let skipped = 0;
 
-  for (const med of medicines) {
+  const allMedicines = [...medicines, ...extendedMedicines, ...extendedMedicines2, ...extendedMedicines3, ...extendedMedicines4];
+  console.log(`Processing ${allMedicines.length} medicine entries...`);
+
+  for (const med of allMedicines) {
     const isDup = existing.some(e =>
       e.name?.toLowerCase() === med.name.toLowerCase() &&
       e.strength === med.strength &&

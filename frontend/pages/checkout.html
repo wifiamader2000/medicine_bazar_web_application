@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Medicine Bazar</title>
+  <link rel="icon" href="/assets/images/medicine-placeholder.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <header class="header">
+    <div class="header-top"><div class="container"><div><span data-en="Need Help?" data-bn="সাহায্য দরকার?">Need Help?</span> <a href="tel:01602444532">01602444532</a></div><div style="display:flex;align-items:center;gap:16px;"><div class="lang-switch"><button data-lang="en" class="active">EN</button><button data-lang="bn">বাং</button></div></div></div></div>
+    <div class="header-main"><div class="container">
+      <a href="/" class="logo"><img src="/assets/images/medicine-placeholder.svg" alt="Medicine Bazar"><div class="logo-text"><span data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</span><small data-en="Your Trusted Pharmacy" data-bn="আপনার বিশ্বস্ত ফার্মেসি">Your Trusted Pharmacy</small></div></a>
+      <div class="search-bar"><input type="text" id="search-input" placeholder="Search medicines..."><button onclick="document.getElementById('search-input').value&&(window.location.href='/search?q='+encodeURIComponent(document.getElementById('search-input').value))">&#128269;</button><div id="search-suggestions" class="search-suggestions"></div></div>
+      <div class="header-actions"><div id="auth-area"></div><a href="/cart" class="header-btn"><span class="icon">&#128722;</span><span>Cart</span><span class="cart-count" style="display:none">0</span></a><button class="mobile-menu-btn">&#9776;</button></div>
+    </div></div>
+    <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
+  </header>
+  
+  <section class="section"><div class="container">
+    <h2 class="section-title">Checkout</h2>
+    <div id="checkout-content">
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;">
+        <div>
+          <div class="card" style="margin-bottom:16px;"><h3 style="margin-bottom:12px;">Shipping Address</h3>
+            <div class="form-group"><label>Full Name</label><input type="text" id="co-name" class="form-control" required></div>
+            <div class="form-group"><label>Phone</label><input type="tel" id="co-phone" class="form-control" required></div>
+            <div class="form-group"><label>Address</label><textarea id="co-address" class="form-control" rows="3" required></textarea></div>
+            <div class="form-group"><label>City/District</label><input type="text" id="co-city" class="form-control"></div>
+          </div>
+          <div class="card"><h3 style="margin-bottom:12px;">Payment Method</h3>
+            <div id="payment-methods"></div>
+            <div id="payment-details" style="margin-top:12px;display:none;">
+              <div class="alert alert-info" id="payment-instruction"></div>
+              <div class="form-group"><label>Transaction ID</label><input type="text" id="co-txid" class="form-control" placeholder="Enter transaction ID"></div>
+            </div>
+            <div class="form-group" style="margin-top:12px;"><label>Coupon Code</label><div style="display:flex;gap:8px;"><input type="text" id="co-coupon" class="form-control" placeholder="Enter coupon code"><button class="btn btn-outline btn-sm" onclick="applyCoupon()">Apply</button></div></div>
+            <div class="form-group"><label>Order Note</label><textarea id="co-note" class="form-control" rows="2" placeholder="Any special instructions..."></textarea></div>
+          </div>
+        </div>
+        <div class="card" style="position:sticky;top:80px;align-self:start;">
+          <h3 style="margin-bottom:12px;">Order Summary</h3>
+          <div id="order-summary"><div class="loading"><div class="spinner"></div></div></div>
+          <button class="btn btn-primary btn-block btn-lg" style="margin-top:16px;" onclick="placeOrder()">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div></section>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
+  <script src="/js/app.js"></script>
+  <script>
+  let cartData = null, selectedPayment = 'cod';
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!MB.isLoggedIn()) { window.location.href = '/login?redirect=/checkout'; return; }
+    const res = await MB.get('/cart');
+    if (!res.success || !res.data.items || res.data.items.length === 0) { window.location.href = '/cart'; return; }
+    cartData = res.data;
+    document.getElementById('co-name').value = MB.user.name || '';
+    let summaryHtml = '';
+    cartData.items.forEach(item => { summaryHtml += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>' + item.name + ' x' + item.quantity + '</span><span>' + MB.formatPrice(item.total) + '</span></div>'; });
+    const delivery = cartData.total >= 500 ? 0 : 60;
+    summaryHtml += '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;"><span>Delivery</span><span>' + (delivery === 0 ? 'Free' : MB.formatPrice(delivery)) + '</span></div>';
+    summaryHtml += '<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;border-top:2px solid var(--border);"><span>Total</span><span>' + MB.formatPrice(cartData.total + delivery) + '</span></div>';
+    document.getElementById('order-summary').innerHTML = summaryHtml;
+    const pmRes = await MB.get('/payment-methods');
+    if (pmRes.success) {
+      let pmHtml = '';
+      const methods = [['cod','Cash on Delivery','ক্যাশ অন ডেলিভারি'],['nagad','Nagad - 01602444532','নগদ'],['bkash','bKash - 01602444532','বিকাশ'],['upay','Upay - 01602444532','উপে'],['merchant','Merchant - 01940826276','মার্চেন্ট']];
+      methods.forEach(([key,name]) => { pmHtml += '<div class="payment-option' + (key === 'cod' ? ' selected' : '') + '" onclick="selectPayment(\'' + key + '\')" data-method="' + key + '"><div class="name">' + name + '</div></div>'; });
+      pmHtml += '<div class="payment-option" onclick="window.open(\'https://shop.bkash.com/bismillah-store01940826276/paymentlink\',\'_blank\')"><div class="name">bKash Payment Link &#128279;</div></div>';
+      document.getElementById('payment-methods').innerHTML = pmHtml;
+    }
+  });
+  function selectPayment(method) {
+    selectedPayment = method;
+    document.querySelectorAll('.payment-option').forEach(el => el.classList.toggle('selected', el.dataset.method === method));
+    const details = document.getElementById('payment-details');
+    if (method !== 'cod') {
+      details.style.display = 'block';
+      const numbers = { nagad: '01602444532', bkash: '01602444532', upay: '01602444532', merchant: '01940826276' };
+      document.getElementById('payment-instruction').innerHTML = 'Send payment to: <strong>' + (numbers[method] || '') + '</strong> <button class="copy-btn" onclick="MB.copyText(\'' + (numbers[method] || '') + '\')">Copy</button><br>Then enter the Transaction ID below.';
+    } else { details.style.display = 'none'; }
+  }
+  function applyCoupon() { MB.toast('Coupon will be applied at order placement', 'info'); }
+  async function placeOrder() {
+    const name = document.getElementById('co-name').value;
+    const phone = document.getElementById('co-phone').value;
+    const address = document.getElementById('co-address').value;
+    if (!name || !phone || !address) { MB.toast('Please fill shipping details', 'error'); return; }
+    try {
+      const res = await MB.post('/orders', {
+        items: cartData.items.map(i => ({ productId: i.productId, quantity: i.quantity, unit: i.unit })),
+        shippingAddress: { name, phone, address, city: document.getElementById('co-city').value },
+        paymentMethod: selectedPayment,
+        transactionId: document.getElementById('co-txid').value || null,
+        couponCode: document.getElementById('co-coupon').value || null,
+        note: document.getElementById('co-note').value || '',
+      });
+      if (res.success) { await MB.del('/cart/clear'); MB.toast('Order placed successfully!', 'success'); setTimeout(() => window.location.href = '/account/orders', 1500); }
+      else { MB.toast(res.message || 'Order failed', 'error'); }
+    } catch (err) { MB.toast(err.message || 'Order failed', 'error'); }
+  }
+</script>
+</body>
+</html>

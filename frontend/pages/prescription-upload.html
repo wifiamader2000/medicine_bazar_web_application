@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Prescription - Medicine Bazar</title>
+  <link rel="icon" href="/assets/images/medicine-placeholder.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <header class="header">
+    <div class="header-top"><div class="container"><div><span data-en="Need Help?" data-bn="সাহায্য দরকার?">Need Help?</span> <a href="tel:01602444532">01602444532</a></div><div style="display:flex;align-items:center;gap:16px;"><div class="lang-switch"><button data-lang="en" class="active">EN</button><button data-lang="bn">বাং</button></div></div></div></div>
+    <div class="header-main"><div class="container">
+      <a href="/" class="logo"><img src="/assets/images/medicine-placeholder.svg" alt="Medicine Bazar"><div class="logo-text"><span data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</span><small data-en="Your Trusted Pharmacy" data-bn="আপনার বিশ্বস্ত ফার্মেসি">Your Trusted Pharmacy</small></div></a>
+      <div class="search-bar"><input type="text" id="search-input" placeholder="Search medicines..."><button onclick="document.getElementById('search-input').value&&(window.location.href='/search?q='+encodeURIComponent(document.getElementById('search-input').value))">&#128269;</button><div id="search-suggestions" class="search-suggestions"></div></div>
+      <div class="header-actions"><div id="auth-area"></div><a href="/cart" class="header-btn"><span class="icon">&#128722;</span><span>Cart</span><span class="cart-count" style="display:none">0</span></a><button class="mobile-menu-btn">&#9776;</button></div>
+    </div></div>
+    <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
+  </header>
+  
+  <section class="section"><div class="container" style="max-width:600px;">
+    <div class="card">
+      <h2 style="margin-bottom:8px;" data-en="Upload Your Prescription" data-bn="আপনার প্রেসক্রিপশন আপলোড করুন">Upload Your Prescription</h2>
+      <p style="color:var(--text-secondary);margin-bottom:24px;" data-en="Upload your doctor's prescription and we'll prepare your medicines." data-bn="আপনার ডাক্তারের প্রেসক্রিপশন আপলোড করুন।">Upload your doctor's prescription and we'll prepare your medicines.</p>
+      <div id="upload-result" class="hidden"></div>
+      <div class="form-group"><label>Patient Name</label><input type="text" id="rx-patient" class="form-control"></div>
+      <div class="form-group"><label>Doctor Name</label><input type="text" id="rx-doctor" class="form-control"></div>
+      <div class="form-group"><label>Prescription Image/PDF</label><input type="file" id="rx-file" class="form-control" accept="image/*,.pdf"></div>
+      <div class="form-group"><label>Note (optional)</label><textarea id="rx-note" class="form-control" rows="3"></textarea></div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="uploadRx()">Upload Prescription</button>
+      <div class="alert alert-info" style="margin-top:16px;">Your prescription is kept private and secure. Only authorized pharmacists can view it.</div>
+    </div>
+  </div></section>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
+  <script src="/js/app.js"></script>
+  <script>
+  async function uploadRx() {
+    if (!MB.isLoggedIn()) { window.location.href = '/login?redirect=/prescription-upload'; return; }
+    const file = document.getElementById('rx-file').files[0];
+    if (!file) { MB.toast('Please select a file', 'error'); return; }
+    const fd = new FormData();
+    fd.append('prescription', file);
+    fd.append('patientName', document.getElementById('rx-patient').value);
+    fd.append('doctorName', document.getElementById('rx-doctor').value);
+    fd.append('note', document.getElementById('rx-note').value);
+    try {
+      const res = await MB.upload('/prescriptions/upload', fd);
+      if (res.success) {
+        document.getElementById('upload-result').className = 'alert alert-success';
+        document.getElementById('upload-result').textContent = 'Prescription uploaded successfully! We will review it shortly.';
+      } else {
+        document.getElementById('upload-result').className = 'alert alert-error';
+        document.getElementById('upload-result').textContent = res.message || 'Upload failed';
+      }
+    } catch (err) { MB.toast('Upload failed', 'error'); }
+  }
+</script>
+</body>
+</html>

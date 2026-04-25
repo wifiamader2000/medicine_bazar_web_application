@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medicine Bazar - Your Trusted Pharmacy Partner</title>
+  <meta name="description" content="Medicine Bazar - Online pharmacy and medicine delivery service. Order medicines, upload prescriptions, and get doorstep delivery.">
+  <link rel="icon" href="/assets/images/medicine-placeholder.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="container">
+        <div><span data-en="Need Help?" data-bn="সাহায্য দরকার?">Need Help?</span> <a href="tel:01602444532">01602444532</a></div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div class="lang-switch">
+            <button data-lang="en" class="active">EN</button>
+            <button data-lang="bn">বাং</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-main">
+      <div class="container">
+        <a href="/" class="logo">
+          <img src="/assets/images/medicine-placeholder.svg" alt="Medicine Bazar" id="header-logo">
+          <div class="logo-text">
+            <span data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</span>
+            <small data-en="Your Trusted Pharmacy" data-bn="আপনার বিশ্বস্ত ফার্মেসি">Your Trusted Pharmacy</small>
+          </div>
+        </a>
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Search medicines, health products..." data-en-placeholder="Search medicines, health products..." data-bn-placeholder="ওষুধ, স্বাস্থ্য পণ্য খুঁজুন...">
+          <button onclick="document.getElementById('search-input').value && (window.location.href='/search?q='+encodeURIComponent(document.getElementById('search-input').value))">&#128269;</button>
+          <div id="search-suggestions" class="search-suggestions"></div>
+        </div>
+        <div class="header-actions">
+          <div id="auth-area"></div>
+          <a href="/cart" class="header-btn">
+            <span class="icon">&#128722;</span>
+            <span data-en="Cart" data-bn="কার্ট">Cart</span>
+            <span class="cart-count" style="display:none">0</span>
+          </a>
+          <button class="mobile-menu-btn" aria-label="Menu">&#9776;</button>
+        </div>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <div class="container">
+        <a href="/" class="nav-link active" data-en="Home" data-bn="হোম">Home</a>
+        <a href="/shop" class="nav-link" data-en="Shop" data-bn="শপ">Shop</a>
+        <a href="/prescription-upload" class="nav-link" data-en="Upload Prescription" data-bn="প্রেসক্রিপশন আপলোড">Upload Prescription</a>
+        <a href="/lab-tests" class="nav-link" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</a>
+        <a href="/blog" class="nav-link" data-en="Health Blog" data-bn="স্বাস্থ্য ব্লগ">Health Blog</a>
+        <a href="/about" class="nav-link" data-en="About" data-bn="সম্পর্কে">About</a>
+        <a href="/contact" class="nav-link" data-en="Contact" data-bn="যোগাযোগ">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 data-en="Your Trusted Pharmacy Partner" data-bn="আপনার বিশ্বস্ত ফার্মেসি পার্টনার">Your Trusted Pharmacy Partner</h1>
+        <p data-en="Order medicines online, upload prescriptions, and get doorstep delivery. Quality medicines at affordable prices." data-bn="অনলাইনে ওষুধ অর্ডার করুন, প্রেসক্রিপশন আপলোড করুন, এবং ঘরে বসে ডেলিভারি পান। সাশ্রয়ী মূল্যে মানসম্মত ওষুধ।">Order medicines online, upload prescriptions, and get doorstep delivery. Quality medicines at affordable prices.</p>
+        <div class="hero-actions">
+          <a href="/shop" class="btn btn-white btn-lg" data-en="Shop Now" data-bn="এখনই কিনুন">Shop Now</a>
+          <a href="/prescription-upload" class="btn btn-outline btn-lg" style="color:#fff;border-color:#fff;" data-en="Upload Prescription" data-bn="প্রেসক্রিপশন আপলোড">Upload Prescription</a>
+        </div>
+      </div>
+      <div class="hero-img">
+        <img src="/assets/images/medicine-placeholder.svg" alt="Pharmacy">
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Bar -->
+  <section class="trust-bar">
+    <div class="container">
+      <div class="trust-items">
+        <div class="trust-item"><span class="icon">&#9989;</span> <span data-en="Genuine Medicines" data-bn="আসল ওষুধ">Genuine Medicines</span></div>
+        <div class="trust-item"><span class="icon">&#128666;</span> <span data-en="Home Delivery" data-bn="হোম ডেলিভারি">Home Delivery</span></div>
+        <div class="trust-item"><span class="icon">&#128176;</span> <span data-en="Best Prices" data-bn="সেরা দাম">Best Prices</span></div>
+        <div class="trust-item"><span class="icon">&#128247;</span> <span data-en="Prescription Upload" data-bn="প্রেসক্রিপশন আপলোড">Prescription Upload</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title" data-en="Shop by Category" data-bn="ক্যাটাগরি অনুযায়ী কিনুন">Shop by Category</h2>
+          <p class="section-subtitle" data-en="Browse medicines by category" data-bn="ক্যাটাগরি অনুযায়ী ওষুধ খুঁজুন">Browse medicines by category</p>
+        </div>
+        <a href="/shop" class="btn btn-outline btn-sm" data-en="View All" data-bn="সব দেখুন">View All</a>
+      </div>
+      <div id="categories-grid" class="categories-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title" data-en="Featured Medicines" data-bn="বিশেষ ওষুধ">Featured Medicines</h2>
+          <p class="section-subtitle" data-en="Most popular medicines" data-bn="সবচেয়ে জনপ্রিয় ওষুধ">Most popular medicines</p>
+        </div>
+        <a href="/shop" class="btn btn-outline btn-sm" data-en="View All" data-bn="সব দেখুন">View All</a>
+      </div>
+      <div id="featured-products" class="products-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Best Sellers -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title" data-en="Best Sellers" data-bn="সর্বাধিক বিক্রিত">Best Sellers</h2>
+          <p class="section-subtitle" data-en="Top selling medicines" data-bn="সবচেয়ে বেশি বিক্রিত ওষুধ">Top selling medicines</p>
+        </div>
+      </div>
+      <div id="bestseller-products" class="products-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Prescription CTA -->
+  <section class="section" style="background: linear-gradient(135deg, var(--trust-blue), #1D4ED8); color: #fff;">
+    <div class="container" style="text-align:center; padding: 32px 20px;">
+      <h2 style="margin-bottom:12px;" data-en="Upload Your Prescription" data-bn="আপনার প্রেসক্রিপশন আপলোড করুন">Upload Your Prescription</h2>
+      <p style="opacity:0.9;margin-bottom:24px;max-width:600px;margin-left:auto;margin-right:auto;" data-en="Simply upload your doctor's prescription and we'll prepare your medicines for delivery." data-bn="আপনার ডাক্তারের প্রেসক্রিপশন আপলোড করুন এবং আমরা আপনার ওষুধ ডেলিভারির জন্য প্রস্তুত করব।">Simply upload your doctor's prescription and we'll prepare your medicines for delivery.</p>
+      <a href="/prescription-upload" class="btn btn-white btn-lg" data-en="Upload Now" data-bn="এখনই আপলোড করুন">Upload Now</a>
+    </div>
+  </section>
+
+  <!-- New Arrivals -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title" data-en="New Arrivals" data-bn="নতুন পণ্য">New Arrivals</h2>
+          <p class="section-subtitle" data-en="Recently added medicines" data-bn="সম্প্রতি যোগ করা ওষুধ">Recently added medicines</p>
+        </div>
+      </div>
+      <div id="new-products" class="products-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3 data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</h3>
+          <p data-en="Your trusted pharmacy partner for genuine medicines, online ordering, and home delivery." data-bn="আসল ওষুধ, অনলাইন অর্ডার, এবং হোম ডেলিভারির জন্য আপনার বিশ্বস্ত ফার্মেসি পার্টনার।">Your trusted pharmacy partner for genuine medicines, online ordering, and home delivery.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com/medicinebazar24" target="_blank" title="Facebook">f</a>
+            <a href="https://www.youtube.com/@MedicineBazar24" target="_blank" title="YouTube">&#9654;</a>
+            <a href="https://wa.me/8801602444532" target="_blank" title="WhatsApp">W</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h3 data-en="Quick Links" data-bn="দ্রুত লিংক">Quick Links</h3>
+          <a href="/shop" data-en="Shop" data-bn="শপ">Shop</a>
+          <a href="/prescription-upload" data-en="Upload Prescription" data-bn="প্রেসক্রিপশন আপলোড">Upload Prescription</a>
+          <a href="/lab-tests" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</a>
+          <a href="/pharmacy-registration" data-en="Register Pharmacy" data-bn="ফার্মেসি নিবন্ধন">Register Pharmacy</a>
+          <a href="/blog" data-en="Health Blog" data-bn="স্বাস্থ্য ব্লগ">Health Blog</a>
+        </div>
+        <div class="footer-col">
+          <h3 data-en="Policies" data-bn="নীতিমালা">Policies</h3>
+          <a href="/about" data-en="About Us" data-bn="আমাদের সম্পর্কে">About Us</a>
+          <a href="/privacy" data-en="Privacy Policy" data-bn="গোপনীয়তা নীতি">Privacy Policy</a>
+          <a href="/terms" data-en="Terms & Conditions" data-bn="শর্তাবলী">Terms & Conditions</a>
+          <a href="/return" data-en="Return Policy" data-bn="রিটার্ন নীতি">Return Policy</a>
+          <a href="/faq" data-en="FAQ" data-bn="জিজ্ঞাসা">FAQ</a>
+        </div>
+        <div class="footer-col">
+          <h3 data-en="Contact" data-bn="যোগাযোগ">Contact</h3>
+          <p>&#128222; 01602444532</p>
+          <p>&#128231; support@medicinebazar.com</p>
+          <p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp: 01602444532</a></p>
+          <p><a href="https://whatsapp.com/channel/0029Vb8A8KwAYlUGFxSkXy01" target="_blank" style="color:rgba(255,255,255,0.7);" data-en="WhatsApp Channel" data-bn="হোয়াটসঅ্যাপ চ্যানেল">WhatsApp Channel</a></p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container" data-en="&copy; 2024 Medicine Bazar. All rights reserved." data-bn="&copy; ২০২৪ মেডিসিন বাজার। সর্বস্বত্ব সংরক্ষিত।">&copy; 2024 Medicine Bazar. All rights reserved.</div>
+    </div>
+    <div class="footer-disclaimer">
+      <div class="container" data-en="Disclaimer: Medicine Bazar is not a licensed medical practitioner. Always consult your doctor before taking any medicine." data-bn="দ্রষ্টব্য: মেডিসিন বাজার কোনো লাইসেন্সপ্রাপ্ত চিকিৎসক নয়। ওষুধ সেবনের আগে সবসময় আপনার ডাক্তারের পরামর্শ নিন।">Disclaimer: Medicine Bazar is not a licensed medical practitioner. Always consult your doctor before taking any medicine.</div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Float -->
+  <div class="whatsapp-float">
+    <a href="https://wa.me/8801602444532" target="_blank" title="Chat on WhatsApp">&#128172;</a>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await MB.get('/homepage');
+        if (!res.success) return;
+        const { categories, featured, bestSellers, newArrivals } = res.data;
+
+        // Categories
+        const catIcons = { 'Pain & Fever': '&#128138;', 'Cold & Cough': '&#129319;', 'Diabetes': '&#128137;', 'Heart & Blood Pressure': '&#10084;', 'Antibiotics': '&#128138;', 'Vitamins & Supplements': '&#128170;', 'Gastrointestinal': '&#127860;', 'Skin Care': '&#129526;', 'Eye & Ear': '&#128065;', 'Respiratory': '&#127788;', "Women's Health": '&#9792;', 'Baby & Child': '&#128118;', 'Mental Health': '&#129504;', 'Allergy': '&#129319;', 'Sexual Health': '&#128154;', 'Personal Care': '&#128716;', 'Medical Devices': '&#129658;', 'Herbal & Ayurvedic': '&#127807;' };
+        const catGrid = document.getElementById('categories-grid');
+        if (categories.length > 0) {
+          catGrid.innerHTML = categories.map(c => `
+            <a href="/category/${c.slug}" class="category-card">
+              <div class="icon">${catIcons[c.name] || '&#128138;'}</div>
+              <div class="name">${c.name}</div>
+              ${c.nameBn ? `<div class="name-bn">${c.nameBn}</div>` : ''}
+              <div class="count">${c.productCount || 0} products</div>
+            </a>`).join('');
+        } else {
+          catGrid.innerHTML = '<div class="empty-state"><p>No categories yet</p></div>';
+        }
+
+        // Featured
+        const featuredGrid = document.getElementById('featured-products');
+        featuredGrid.innerHTML = featured.length > 0 ? featured.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><p>No featured products yet</p></div>';
+
+        // Best Sellers
+        const bestGrid = document.getElementById('bestseller-products');
+        bestGrid.innerHTML = bestSellers.length > 0 ? bestSellers.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><p>No best sellers yet</p></div>';
+
+        // New Arrivals
+        const newGrid = document.getElementById('new-products');
+        newGrid.innerHTML = newArrivals.length > 0 ? newArrivals.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><p>No new arrivals yet</p></div>';
+
+      } catch (err) {
+        console.error('Homepage load error:', err);
+      }
+    });
+  </script>
+</body>
+</html>

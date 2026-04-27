@@ -78,7 +78,14 @@ async function loadDashboard(el) {
       <div class="chart-card"><h3>Sales Overview</h3><div class="chart-placeholder">Online: ${MB.formatPrice(d.onlineSalesTotal)} | POS: ${MB.formatPrice(d.posSalesTotal)}</div></div>
       <div class="chart-card"><h3>Stock Status</h3><div class="chart-placeholder">Sold: ${d.soldPercentage}% | Remaining: ${d.remainingStockPercentage}%</div></div>
     </div>
-    ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => `<tr><td>${p.name}</td><td style="color:var(--alert-red);font-weight:700;">${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+      ${d.categoryBreakdown && d.categoryBreakdown.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Products by Category</h3><div class="table-wrap"><table><thead><tr><th>Category</th><th>Count</th><th>%</th></tr></thead><tbody>' + d.categoryBreakdown.map(c => '<tr><td>' + c.name + '</td><td><strong>' + c.count + '</strong></td><td>' + ((c.count / d.totalProducts) * 100).toFixed(1) + '%</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+      ${d.topProducts && d.topProducts.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Top Selling Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Sold</th><th>Stock</th></tr></thead><tbody>' + d.topProducts.map(p => '<tr><td>' + p.name + (p.strength ? ' ' + p.strength : '') + '</td><td><strong>' + p.sold + '</strong></td><td>' + p.stock + '</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+      ${d.topManufacturers && d.topManufacturers.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Top Manufacturers</h3><div class="table-wrap"><table><thead><tr><th>Manufacturer</th><th>Products</th></tr></thead><tbody>' + d.topManufacturers.map(m => '<tr><td>' + m.name + '</td><td><strong>' + m.count + '</strong></td></tr>').join('') + '</tbody></table></div></div>' : ''}
+      ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => '<tr><td>' + p.name + '</td><td style="color:var(--alert-red);font-weight:700;">' + p.stock + '</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+    </div>`;
 
   // Update sidebar badges
   const pendingOrdersBadge = document.getElementById('pending-orders-count');
@@ -369,7 +376,7 @@ async function loadPOS(el) {
   el.innerHTML = `
     <div class="pos-layout">
       <div class="pos-products">
-        <div class="search-bar" style="margin-bottom:16px;"><input type="text" id="pos-search" placeholder="Search product..." class="form-control"><button class="btn btn-primary btn-sm" style="position:absolute;right:4px;top:4px;" onclick="posSearch()">Search</button></div>
+        <div class="search-bar" style="margin-bottom:16px;"><input type="text" id="pos-search" placeholder="Search by name, generic, barcode..." class="form-control" oninput="debouncePosSearch()" onkeydown="if(event.key==='Enter')posSearch()"><button class="btn btn-primary btn-sm" style="position:absolute;right:4px;top:4px;" onclick="posSearch()">Search</button></div>
         <div id="pos-results"></div>
       </div>
       <div class="pos-bill">
@@ -399,16 +406,26 @@ async function openPosSession() {
   if (res.success) { MB.toast('POS session opened', 'success'); loadSection('pos'); }
 }
 
+let posSearchTimer;
+function debouncePosSearch() {
+  clearTimeout(posSearchTimer);
+  posSearchTimer = setTimeout(posSearch, 250);
+}
+
 async function posSearch() {
-  const q = document.getElementById('pos-search').value;
-  if (!q) return;
+  const q = document.getElementById('pos-search').value.trim();
+  if (!q) { document.getElementById('pos-results').innerHTML = ''; return; }
   const res = await MB.get('/search/suggestions?q=' + encodeURIComponent(q) + '&limit=20');
   if (res.success) {
+    if (res.data.length === 0) {
+      document.getElementById('pos-results').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No products found for "' + q + '"</p>';
+      return;
+    }
     document.getElementById('pos-results').innerHTML = res.data.map(p => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="addToPosBill('${p.id}','${p.name.replace(/'/g, "\\'")}',${p.sellingPrice || p.mrp || 0})">
-        <img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" style="width:40px;height:40px;object-fit:contain;">
-        <div style="flex:1;"><strong>${p.name} ${p.strength || ''}</strong><br><small>${p.genericName || ''}</small></div>
-        <div style="font-weight:700;color:var(--primary);">${MB.formatPrice(p.sellingPrice || p.mrp)}</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''" onclick="addToPosBill('${p.id}','${p.name.replace(/'/g, "\\'")}',${p.sellingPrice || p.mrp || 0})">
+        <img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;">
+        <div style="flex:1;"><strong>${p.name} ${p.strength || ''}</strong><br><small style="color:var(--text-muted);">${p.genericName || ''} ${p.manufacturer ? '&bull; ' + p.manufacturer : ''}</small></div>
+        <div style="text-align:right;"><div style="font-weight:700;color:var(--primary);">${MB.formatPrice(p.sellingPrice || p.mrp)}</div><small style="color:var(--text-muted);">Stock: ${p.stockQuantity || 0}</small></div>
       </div>`).join('');
   }
 }

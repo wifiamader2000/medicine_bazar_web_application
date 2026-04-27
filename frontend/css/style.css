@@ -250,6 +250,31 @@ tr:hover { background: var(--bg); }
 .whatsapp-float a { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: #25D366; color: var(--white); border-radius: 50%; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: var(--transition); }
 .whatsapp-float a:hover { transform: scale(1.1); }
 
+/* Filter Tags */
+.filter-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--soft-sky); color: var(--trust-blue); padding: 4px 12px; border-radius: 20px; font-size: 13px; }
+.filter-tag button { background: none; border: none; font-size: 16px; color: var(--trust-blue); cursor: pointer; padding: 0 2px; line-height: 1; }
+
+/* Pagination */
+.pagination { display: flex; gap: 4px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.pagination button { padding: 8px 14px; border: 1px solid var(--border); background: var(--white); border-radius: var(--radius-xs); cursor: pointer; font-size: 14px; transition: var(--transition); }
+.pagination button:hover { background: var(--bg); border-color: var(--primary); }
+.pagination button.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+
+/* Blog Card */
+.blog-card { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: var(--transition); }
+.blog-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.blog-card .blog-body { padding: 16px; }
+.blog-card .blog-category { font-size: 12px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.blog-card h3 { font-size: 16px; margin: 8px 0; line-height: 1.3; }
+.blog-card h3 a { color: var(--text); }
+.blog-card h3 a:hover { color: var(--primary); }
+
+/* Lab Test Card */
+.lab-test-card { background: var(--white); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); transition: var(--transition); text-align: center; border-top: 3px solid var(--primary); }
+.lab-test-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.lab-test-card .test-price { font-size: 28px; font-weight: 700; color: var(--primary); margin: 12px 0; }
+.lab-test-card .test-details { font-size: 13px; color: var(--text-muted); margin: 8px 0; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-top .container { font-size: 11px; }
@@ -278,6 +303,11 @@ tr:hover { background: var(--bg); }
   .container { padding: 0 12px; }
   .trust-items { gap: 16px; font-size: 12px; }
   .btn-lg { padding: 12px 24px; font-size: 14px; }
+  .stats-counter { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+  .stats-counter div > div:first-child { font-size: 28px !important; }
+  .shop-filters { flex-direction: column; align-items: stretch !important; }
+  .shop-filters select { max-width: 100% !important; }
+  .product-detail-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 480px) {

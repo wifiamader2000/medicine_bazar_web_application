@@ -254,12 +254,6 @@ tr:hover { background: var(--bg); }
 .filter-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--soft-sky); color: var(--trust-blue); padding: 4px 12px; border-radius: 20px; font-size: 13px; }
 .filter-tag button { background: none; border: none; font-size: 16px; color: var(--trust-blue); cursor: pointer; padding: 0 2px; line-height: 1; }
 
-/* Pagination */
-.pagination { display: flex; gap: 4px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
-.pagination button { padding: 8px 14px; border: 1px solid var(--border); background: var(--white); border-radius: var(--radius-xs); cursor: pointer; font-size: 14px; transition: var(--transition); }
-.pagination button:hover { background: var(--bg); border-color: var(--primary); }
-.pagination button.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
-
 /* Blog Card */
 .blog-card { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: var(--transition); }
 .blog-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }

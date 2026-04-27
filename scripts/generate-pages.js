@@ -403,6 +403,7 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
       </div>
     </div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (MB.isLoggedIn()) window.location.href = '/account';
   async function doLogin() {
     const email = document.getElementById('login-email').value;
@@ -439,6 +440,7 @@ fs.writeFileSync(path.join(pagesDir, 'register.html'), wrap('Register', 'নি�
       <p style="text-align:center;margin-top:16px;font-size:14px;"><a href="/login">Already have an account? Login</a></p>
     </div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (MB.isLoggedIn()) window.location.href = '/account';
   async function doRegister() {
     const name = document.getElementById('reg-name').value, email = document.getElementById('reg-email').value, phone = document.getElementById('reg-phone').value, pass = document.getElementById('reg-password').value;
@@ -461,6 +463,7 @@ fs.writeFileSync(path.join(pagesDir, 'account.html'), wrap('My Account', 'আম
     <div id="tab-orders" class="tab-content"><div id="orders-list"><div class="loading"><div class="spinner"></div></div></div></div>
     <div id="tab-prescriptions" class="tab-content"><div id="prescriptions-list"><div class="loading"><div class="spinner"></div></div></div></div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (!MB.isLoggedIn()) window.location.href = '/login?redirect=/account';
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['profile','orders','prescriptions'][i] === name));

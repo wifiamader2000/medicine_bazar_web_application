@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Consultation - Medicine Bazar</title>
+  <link rel="icon" href="/assets/images/medicine-placeholder.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <header class="header">
+    <div class="header-top"><div class="container"><div><span data-en="Need Help?" data-bn="সাহায্য দরকার?">Need Help?</span> <a href="tel:01602444532">01602444532</a></div><div style="display:flex;align-items:center;gap:16px;"><div class="lang-switch"><button data-lang="en" class="active">EN</button><button data-lang="bn">বাং</button></div></div></div></div>
+    <div class="header-main"><div class="container">
+      <a href="/" class="logo"><img src="/assets/images/medicine-placeholder.svg" alt="Medicine Bazar"><div class="logo-text"><span data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</span><small data-en="Your Trusted Pharmacy" data-bn="আপনার বিশ্বস্ত ফার্মেসি">Your Trusted Pharmacy</small></div></a>
+      <div class="search-bar"><input type="text" id="search-input" placeholder="Search medicines..."><button onclick="document.getElementById('search-input').value&&(window.location.href='/search?q='+encodeURIComponent(document.getElementById('search-input').value))">&#128269;</button><div id="search-suggestions" class="search-suggestions"></div></div>
+      <div class="header-actions"><div id="auth-area"></div><a href="/cart" class="header-btn"><span class="icon">&#128722;</span><span>Cart</span><span class="cart-count" style="display:none">0</span></a><button class="mobile-menu-btn">&#9776;</button></div>
+    </div></div>
+    <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
+  </header>
+  
+  <section class="section"><div class="container">
+    <div class="section-header"><div>
+      <h2 class="section-title" data-en="Doctor Consultation" data-bn="ডাক্তার পরামর্শ">Doctor Consultation</h2>
+      <p class="section-subtitle" data-en="Get professional medical advice from certified doctors" data-bn="প্রত্যয়িত ডাক্তারদের কাছ থেকে পেশাদার চিকিৎসা পরামর্শ পান">Get professional medical advice from certified doctors</p>
+    </div></div>
+    <div class="alert alert-info" style="margin-bottom:24px;">
+      <strong data-en="Coming Soon!" data-bn="শীঘ্রই আসছে!">Coming Soon!</strong>
+      <span data-en="Our doctor consultation service is currently under development. Stay tuned for video/chat consultations." data-bn="আমাদের ডাক্তার পরামর্শ সেবা বর্তমানে ডেভেলপমেন্টে আছে। ভিডিও/চ্যাট পরামর্শের জন্য অপেক্ষা করুন।">Our doctor consultation service is currently under development. Stay tuned for video/chat consultations.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#129657;</div>
+        <h3 data-en="General Consultation" data-bn="সাধারণ পরামর্শ">General Consultation</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Talk to a general physician about your health concerns" data-bn="আপনার স্বাস্থ্য সমস্যা নিয়ে একজন সাধারণ চিকিৎসকের সাথে কথা বলুন">Talk to a general physician about your health concerns</p>
+        <button class="btn btn-outline btn-block" disabled data-en="Coming Soon" data-bn="শীঘ্রই আসছে">Coming Soon</button>
+      </div>
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128138;</div>
+        <h3 data-en="Pharmacy Advice" data-bn="ফার্মেসি পরামর্শ">Pharmacy Advice</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Get medicine guidance from licensed pharmacists" data-bn="লাইসেন্সপ্রাপ্ত ফার্মাসিস্টদের কাছ থেকে ওষুধ সংক্রান্ত পরামর্শ নিন">Get medicine guidance from licensed pharmacists</p>
+        <a href="https://wa.me/8801602444532" class="btn btn-primary btn-block" data-en="Chat via WhatsApp" data-bn="হোয়াটসঅ্যাপে চ্যাট করুন">Chat via WhatsApp</a>
+      </div>
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128203;</div>
+        <h3 data-en="Request Appointment" data-bn="অ্যাপয়েন্টমেন্ট অনুরোধ">Request Appointment</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Schedule a future consultation with a specialist" data-bn="একজন বিশেষজ্ঞের সাথে ভবিষ্যত পরামর্শের সময় নির্ধারণ করুন">Schedule a future consultation with a specialist</p>
+        <button class="btn btn-outline btn-block" disabled data-en="Coming Soon" data-bn="শীঘ্রই আসছে">Coming Soon</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:32px;">
+      <h3 style="margin-bottom:16px;" data-en="Quick Consultation Request" data-bn="দ্রুত পরামর্শ অনুরোধ">Quick Consultation Request</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label data-en="Your Name" data-bn="আপনার নাম">Your Name</label><input type="text" id="doc-name" class="form-control"></div>
+        <div class="form-group"><label data-en="Phone" data-bn="ফোন">Phone</label><input type="tel" id="doc-phone" class="form-control"></div>
+        <div class="form-group" style="grid-column:span 2;"><label data-en="Describe your concern" data-bn="আপনার সমস্যা বর্ণনা করুন">Describe your concern</label><textarea id="doc-concern" class="form-control" rows="4"></textarea></div>
+      </div>
+      <button class="btn btn-primary" onclick="submitConsultation()" data-en="Submit Request" data-bn="অনুরোধ জমা দিন">Submit Request</button>
+    </div>
+    <div class="alert" style="margin-top:24px;background:var(--soft-sky);border:1px solid var(--trust-blue);color:var(--text);">
+      <strong>Medical Disclaimer:</strong> This is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or qualified health provider.
+    </div>
+  </div></section>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
+  <script src="/js/app.js"></script>
+  <script>
+  async function submitConsultation() {
+    const name = document.getElementById('doc-name').value;
+    const phone = document.getElementById('doc-phone').value;
+    const concern = document.getElementById('doc-concern').value;
+    if (!name || !phone || !concern) { MB.toast('Please fill all fields', 'error'); return; }
+    MB.toast('Consultation request submitted! We will contact you soon.', 'success');
+    document.getElementById('doc-name').value = '';
+    document.getElementById('doc-phone').value = '';
+    document.getElementById('doc-concern').value = '';
+  }
+</script>
+</body>
+</html>

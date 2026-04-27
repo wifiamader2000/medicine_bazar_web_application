@@ -141,4 +141,17 @@ router.post('/logout', authenticate, asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully', messageBn: 'সফলভাবে লগআউট হয়েছে' });
 }));
 
+// Loyalty points
+router.get('/loyalty-points', authenticate, asyncHandler(async (req, res) => {
+  const user = DataService.get('users').findById(req.user.id);
+  const history = DataService.get('loyaltyPoints').findAll({}).filter(p => p.userId === req.user.id);
+  history.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  res.json({
+    success: true, data: {
+      balance: user?.loyaltyPoints || 0,
+      history: history.slice(0, 50),
+    },
+  });
+}));
+
 module.exports = router;

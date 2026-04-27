@@ -90,6 +90,20 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }
   }
 
+  // Award loyalty points (1 point per taka by default)
+  const loyaltyConfig = DataService.get('settings').findOne({ key: 'loyalty' });
+  const pointsPerTaka = loyaltyConfig?.value?.pointsPerTaka || 1;
+  if (loyaltyConfig?.value?.enabled !== false) {
+    const earnedPoints = Math.floor(total * pointsPerTaka);
+    const user = DataService.get('users').findById(req.user.id);
+    if (user) {
+      DataService.get('users').update(req.user.id, { loyaltyPoints: (user.loyaltyPoints || 0) + earnedPoints });
+    }
+    DataService.get('loyaltyPoints').create({
+      userId: req.user.id, orderId: order.id, type: 'earned', points: earnedPoints, description: `Order ${order.orderNumber}`,
+    });
+  }
+
   logAudit(req, 'order_placed', { orderId: order.id, orderNumber: order.orderNumber, total });
   res.status(201).json({ success: true, message: 'Order placed successfully', messageBn: 'অর্ডার সফলভাবে দেওয়া হয়েছে', data: order });
 }));
@@ -156,6 +170,37 @@ router.put('/:id/verify-payment', authenticate, authorize('admin', 'manager'), a
   DataService.get('orders').update(req.params.id, { paymentStatus, paymentVerifiedBy: req.user.email, paymentVerifiedAt: new Date().toISOString() });
   logAudit(req, 'payment_verification', { orderId: req.params.id, status: paymentStatus });
   res.json({ success: true, message: 'Payment status updated' });
+}));
+
+// Delivery tracking update
+router.put('/:id/delivery', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const { deliveryPerson, deliveryPhone, deliveryNote, estimatedDelivery } = req.body;
+  const order = DataService.get('orders').findById(req.params.id);
+  if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+  const history = order.statusHistory || [];
+  history.push({ status: 'delivery_assigned', timestamp: new Date().toISOString(), note: `Assigned to ${deliveryPerson}`, by: req.user.email });
+  DataService.get('orders').update(req.params.id, {
+    deliveryPerson, deliveryPhone, deliveryNote, estimatedDelivery,
+    orderStatus: 'out_for_delivery', statusHistory: history,
+  });
+  logAudit(req, 'delivery_assigned', { orderId: req.params.id, deliveryPerson });
+  res.json({ success: true, message: 'Delivery info updated' });
+}));
+
+// Coupon validation (public for checkout)
+router.post('/validate-coupon', authenticate, asyncHandler(async (req, res) => {
+  const { code, subtotal = 0 } = req.body;
+  if (!code) return res.status(400).json({ success: false, message: 'Coupon code required' });
+  const coupon = DataService.get('coupons').findOne({ code: code.toUpperCase(), active: true });
+  if (!coupon) return res.json({ success: false, message: 'Invalid coupon code', messageBn: 'অবৈধ কুপন কোড' });
+  const now = new Date();
+  if (coupon.startDate && new Date(coupon.startDate) > now) return res.json({ success: false, message: 'Coupon not yet active' });
+  if (coupon.endDate && new Date(coupon.endDate) < now) return res.json({ success: false, message: 'Coupon expired', messageBn: 'কুপনের মেয়াদ শেষ' });
+  if (coupon.usageLimit && (coupon.usedCount || 0) >= coupon.usageLimit) return res.json({ success: false, message: 'Coupon usage limit reached' });
+  if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount) return res.json({ success: false, message: `Minimum order ৳${coupon.minOrderAmount} required`, messageBn: `সর্বনিম্ন অর্ডার ৳${coupon.minOrderAmount} প্রয়োজন` });
+  let discount = coupon.type === 'percentage' ? (subtotal * coupon.value / 100) : coupon.value;
+  if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+  res.json({ success: true, data: { code: coupon.code, type: coupon.type, value: coupon.value, discount: Math.round(discount * 100) / 100, message: `Coupon applied! You save ৳${discount.toFixed(0)}` } });
 }));
 
 module.exports = router;

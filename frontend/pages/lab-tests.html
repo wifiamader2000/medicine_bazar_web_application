@@ -20,27 +20,54 @@
   </header>
   
   <section class="section"><div class="container">
-    <h2 class="section-title" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</h2>
-    <p class="section-subtitle" data-en="Book lab tests from home" data-bn="ঘরে বসে ল্যাব টেস্ট বুক করুন">Book lab tests from home</p>
+    <div class="section-header"><div>
+      <h2 class="section-title" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</h2>
+      <p class="section-subtitle" data-en="Book lab tests from home. Results delivered to your door." data-bn="ঘরে বসে ল্যাব টেস্ট বুক করুন। ফলাফল আপনার দরজায় পৌঁছে যাবে।">Book lab tests from home. Results delivered to your door.</p>
+    </div></div>
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <select id="filter-category" class="form-control" style="max-width:200px;"><option value="">All Categories</option></select>
+      <span id="test-count" style="color:var(--text-muted);font-size:14px;align-self:center;"></span>
+    </div>
     <div id="lab-tests-list"><div class="loading"><div class="spinner"></div></div></div>
   </div></section>
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <section class="section section-alt"><div class="container" style="text-align:center;max-width:600px;">
+    <h3 data-en="How It Works" data-bn="কিভাবে কাজ করে" style="margin-bottom:24px;">How It Works</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+      <div><div style="font-size:36px;margin-bottom:8px;">1&#65039;&#8419;</div><p style="font-size:14px;" data-en="Choose your test and book online" data-bn="টেস্ট বাছাই করুন এবং অনলাইন বুক করুন">Choose your test and book online</p></div>
+      <div><div style="font-size:36px;margin-bottom:8px;">2&#65039;&#8419;</div><p style="font-size:14px;" data-en="Sample collected from your home" data-bn="আপনার বাড়ি থেকে স্যাম্পল সংগ্রহ">Sample collected from your home</p></div>
+      <div><div style="font-size:36px;margin-bottom:8px;">3&#65039;&#8419;</div><p style="font-size:14px;" data-en="Get your report online" data-bn="অনলাইনে রিপোর্ট পান">Get your report online</p></div>
+    </div>
+  </div></section>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   <script>
+  let allTests = [];
+  function renderTests(tests) {
+    const list = document.getElementById('lab-tests-list');
+    document.getElementById('test-count').textContent = tests.length + ' tests available';
+    if (tests.length > 0) {
+      list.innerHTML = '<div class="products-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">' + tests.map(t => '<div class="lab-test-card"><h3>' + t.name + '</h3>' + (t.nameBn ? '<p style="color:var(--text-secondary);font-size:14px;">' + t.nameBn + '</p>' : '') + '<div class="test-price">' + MB.formatPrice(t.price) + '</div><p style="font-size:13px;margin:8px 0;color:var(--text-secondary);line-height:1.5;">' + (t.description || '') + '</p><div class="test-details">' + (t.sampleType ? '<span>Sample: ' + t.sampleType + '</span>' : '') + (t.turnaroundTime ? ' &bull; <span>Report: ' + t.turnaroundTime + '</span>' : '') + '</div>' + (t.preparationRequired ? '<p style="font-size:12px;color:var(--offer-orange);margin-top:8px;">&#9888; ' + (t.preparation || 'Preparation required') + '</p>' : '') + '<button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="bookTest(\'' + t.id + '\')">' + MB.t('Book Now', 'এখনই বুক করুন') + '</button></div>').join('') + '</div>';
+    } else { list.innerHTML = '<div class="empty-state"><h3>' + MB.t('No lab tests available', 'কোনো ল্যাব টেস্ট পাওয়া যায়নি') + '</h3></div>'; }
+  }
   document.addEventListener('DOMContentLoaded', async () => {
     const res = await MB.get('/lab-tests');
-    if (res.success && res.data.length > 0) {
-      document.getElementById('lab-tests-list').innerHTML = '<div class="products-grid">' + res.data.map(t => '<div class="card" style="text-align:center;"><h3>' + t.name + '</h3>' + (t.nameBn ? '<p style="color:var(--text-secondary);">' + t.nameBn + '</p>' : '') + '<p style="margin:8px 0;">' + (t.description || '') + '</p><p style="font-size:24px;font-weight:700;color:var(--primary);margin:12px 0;">' + MB.formatPrice(t.price) + '</p><a href="#book-' + t.id + '" class="btn btn-primary" onclick="bookTest(\'' + t.id + '\')">Book Now</a></div>').join('') + '</div>';
+    if (res.success) {
+      allTests = res.data;
+      const cats = [...new Set(allTests.map(t => t.category).filter(Boolean))].sort();
+      const sel = document.getElementById('filter-category');
+      cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+      sel.addEventListener('change', () => { const v = sel.value; renderTests(v ? allTests.filter(t => t.category === v) : allTests); });
+      renderTests(allTests);
     } else { document.getElementById('lab-tests-list').innerHTML = '<div class="empty-state"><h3>No lab tests available yet</h3></div>'; }
   });
   async function bookTest(id) {
     if (!MB.isLoggedIn()) { window.location.href = '/login?redirect=/lab-tests'; return; }
-    const name = prompt('Patient Name:');
-    const phone = prompt('Phone Number:');
+    const name = prompt(MB.t('Patient Name:', 'রোগীর নাম:'));
+    const phone = prompt(MB.t('Phone Number:', 'ফোন নম্বর:'));
     if (!name || !phone) return;
     const res = await MB.post('/lab-tests/book', { labTestId: id, patientName: name, phone });
-    if (res.success) MB.toast('Lab test booked successfully!', 'success');
+    if (res.success) MB.toast(MB.t('Lab test booked successfully!', 'ল্যাব টেস্ট বুক হয়েছে!'), 'success');
     else MB.toast(res.message || 'Booking failed', 'error');
   }
 </script>

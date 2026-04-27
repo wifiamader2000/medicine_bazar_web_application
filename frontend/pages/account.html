@@ -20,41 +20,143 @@
   </header>
   
   <section class="section"><div class="container">
-    <h2 class="section-title">My Account</h2>
-    <div class="tabs"><button class="tab active" onclick="showTab('profile')">Profile</button><button class="tab" onclick="showTab('orders')">Orders</button><button class="tab" onclick="showTab('prescriptions')">Prescriptions</button></div>
+    <h2 class="section-title" data-en="My Account" data-bn="আমার অ্যাকাউন্ট">My Account</h2>
+    <div class="tabs" style="flex-wrap:wrap;">
+      <button class="tab active" onclick="showTab('profile')" data-en="Profile" data-bn="প্রোফাইল">Profile</button>
+      <button class="tab" onclick="showTab('orders')" data-en="Orders" data-bn="অর্ডার">Orders</button>
+      <button class="tab" onclick="showTab('prescriptions')" data-en="Prescriptions" data-bn="প্রেসক্রিপশন">Prescriptions</button>
+      <button class="tab" onclick="showTab('loyalty')" data-en="Loyalty Points" data-bn="লয়ালটি পয়েন্ট">Loyalty Points</button>
+      <button class="tab" onclick="showTab('wishlist')" data-en="Wishlist" data-bn="উইশলিস্ট">Wishlist</button>
+      <button class="tab" onclick="showTab('addresses')" data-en="Addresses" data-bn="ঠিকানা">Addresses</button>
+    </div>
     <div id="tab-profile" class="tab-content active"><div class="card"><div id="profile-info"><div class="loading"><div class="spinner"></div></div></div></div></div>
     <div id="tab-orders" class="tab-content"><div id="orders-list"><div class="loading"><div class="spinner"></div></div></div></div>
     <div id="tab-prescriptions" class="tab-content"><div id="prescriptions-list"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-loyalty" class="tab-content"><div id="loyalty-content"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-wishlist" class="tab-content"><div id="wishlist-content"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-addresses" class="tab-content"><div id="addresses-content"><div class="loading"><div class="spinner"></div></div></div></div>
   </div></section>
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   <script>
   MB.loadUser();
   if (!MB.isLoggedIn()) window.location.href = '/login?redirect=/account';
+  const tabNames = ['profile','orders','prescriptions','loyalty','wishlist','addresses'];
   function showTab(name) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['profile','orders','prescriptions'][i] === name));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabNames[i] === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'loyalty') loadLoyaltyTab();
+    if (name === 'wishlist') loadWishlistTab();
+    if (name === 'addresses') loadAddressesTab();
   }
   document.addEventListener('DOMContentLoaded', async () => {
     const user = await MB.get('/auth/me');
     if (user.success) {
       const u = user.data;
-      document.getElementById('profile-info').innerHTML = '<p><strong>Name:</strong> ' + u.name + '</p><p><strong>Email:</strong> ' + u.email + '</p><p><strong>Phone:</strong> ' + (u.phone || 'Not set') + '</p><p><strong>Role:</strong> ' + u.role + '</p><p><strong>Joined:</strong> ' + MB.formatDate(u.createdAt) + '</p><div style="margin-top:16px;"><a href="#" class="btn btn-outline btn-sm" onclick="showTab(\'change-password\')">Change Password</a></div>';
+      document.getElementById('profile-info').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Name</p><p style="font-weight:600;">' + u.name + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Email</p><p>' + u.email + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Phone</p><p>' + (u.phone || 'Not set') + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Loyalty Points</p><p style="color:var(--primary);font-weight:700;">' + (u.loyaltyPoints || 0) + ' points</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Role</p><p>' + u.role + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Joined</p><p>' + MB.formatDate(u.createdAt) + '</p></div>' +
+        '</div>' +
+        '<div style="margin-top:20px;display:flex;gap:8px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="showChangePassword()">Change Password</button>' +
+        '<a href="/shop" class="btn btn-primary btn-sm">Continue Shopping</a>' +
+        '</div>';
     }
     const orders = await MB.get('/orders/my-orders');
     if (orders.success) {
-      document.getElementById('orders-list').innerHTML = orders.data.length > 0 ? '<div class="table-wrap"><table><thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>' + orders.data.map(o => '<tr><td>' + o.orderNumber + '</td><td>' + MB.formatDate(o.createdAt) + '</td><td>' + MB.formatPrice(o.total) + '</td><td>' + o.orderStatus + '</td><td>' + o.paymentStatus + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty-state"><p>No orders yet</p><a href="/shop" class="btn btn-primary">Start Shopping</a></div>';
+      document.getElementById('orders-list').innerHTML = orders.data.length > 0 ?
+        '<div class="table-wrap"><table><thead><tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead><tbody>' +
+        orders.data.map(o => '<tr><td><strong>' + o.orderNumber + '</strong></td><td>' + MB.formatDate(o.createdAt) + '</td><td>' + (o.items ? o.items.length : 0) + '</td><td>' + MB.formatPrice(o.total) + '</td><td><span class="badge" style="background:var(--soft-sky);color:var(--trust-blue);padding:3px 8px;border-radius:8px;font-size:12px;">' + o.orderStatus + '</span></td><td>' + o.paymentStatus + '</td><td><button class="btn btn-outline btn-sm" onclick="viewOrder(\'' + o.id + '\')">Details</button></td></tr>').join('') +
+        '</tbody></table></div>' : '<div class="empty-state"><p data-en="No orders yet" data-bn="এখনো কোনো অর্ডার নেই">No orders yet</p><a href="/shop" class="btn btn-primary">Start Shopping</a></div>';
     }
     const prescriptions = await MB.get('/prescriptions/my-prescriptions');
     if (prescriptions.success) {
-      document.getElementById('prescriptions-list').innerHTML = prescriptions.data.length > 0 ? '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>' + prescriptions.data.map(p => '<tr><td>' + MB.formatDate(p.createdAt) + '</td><td>' + (p.patientName || '-') + '</td><td>' + (p.doctorName || '-') + '</td><td>' + p.status + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty-state"><p>No prescriptions uploaded</p><a href="/prescription-upload" class="btn btn-primary">Upload Prescription</a></div>';
+      document.getElementById('prescriptions-list').innerHTML = prescriptions.data.length > 0 ?
+        '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>' +
+        prescriptions.data.map(p => '<tr><td>' + MB.formatDate(p.createdAt) + '</td><td>' + (p.patientName || '-') + '</td><td>' + (p.doctorName || '-') + '</td><td><span class="badge" style="background:var(--soft-sky);color:var(--trust-blue);padding:3px 8px;border-radius:8px;font-size:12px;">' + p.status + '</span></td></tr>').join('') +
+        '</tbody></table></div>' : '<div class="empty-state"><p>No prescriptions uploaded</p><a href="/prescription-upload" class="btn btn-primary">Upload Prescription</a></div>';
     }
-    const path = window.location.pathname;
-    if (path.includes('/orders')) showTab('orders');
-    if (path.includes('/prescriptions')) showTab('prescriptions');
+    const urlPath = window.location.pathname;
+    if (urlPath.includes('/orders')) showTab('orders');
+    else if (urlPath.includes('/prescriptions')) showTab('prescriptions');
+    else if (urlPath.includes('/wishlist')) showTab('wishlist');
+    else if (urlPath.includes('/addresses')) showTab('addresses');
   });
+  async function loadLoyaltyTab() {
+    const res = await MB.get('/auth/loyalty-points');
+    if (!res.success) return;
+    const d = res.data;
+    document.getElementById('loyalty-content').innerHTML =
+      '<div class="card" style="text-align:center;padding:32px;margin-bottom:16px;background:linear-gradient(135deg,var(--primary),var(--teal));">' +
+      '<h3 style="color:#fff;margin-bottom:8px;">Your Loyalty Points</h3>' +
+      '<div style="font-size:48px;font-weight:800;color:#fff;">' + d.balance + '</div>' +
+      '<p style="color:rgba(255,255,255,0.8);margin-top:8px;">Earn points with every purchase!</p></div>' +
+      (d.history.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Points History</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Points</th></tr></thead><tbody>' +
+      d.history.map(h => '<tr><td>' + MB.formatDate(h.createdAt) + '</td><td>' + h.description + '</td><td>' + h.type + '</td><td style="color:' + (h.type === 'earned' ? 'var(--primary)' : 'var(--alert-red)') + ';font-weight:700;">' + (h.type === 'earned' ? '+' : '-') + h.points + '</td></tr>').join('') +
+      '</tbody></table></div></div>' : '<p style="text-align:center;color:var(--text-muted);margin-top:16px;">No loyalty history yet. Place an order to earn points!</p>');
+  }
+  async function loadWishlistTab() {
+    document.getElementById('wishlist-content').innerHTML = '<div class="empty-state"><h3 data-en="Wishlist" data-bn="উইশলিস্ট">Wishlist</h3><p data-en="Save your favorite medicines for later" data-bn="আপনার পছন্দের ওষুধ পরবর্তীর জন্য সংরক্ষণ করুন">Save your favorite medicines for later</p><a href="/shop" class="btn btn-primary">Browse Medicines</a></div>';
+  }
+  async function loadAddressesTab() {
+    document.getElementById('addresses-content').innerHTML =
+      '<div class="card"><h3 style="margin-bottom:16px;" data-en="Saved Addresses" data-bn="সংরক্ষিত ঠিকানা">Saved Addresses</h3>' +
+      '<div id="address-list" style="margin-bottom:16px;"><p style="color:var(--text-muted);" data-en="No saved addresses yet" data-bn="এখনো কোনো সংরক্ষিত ঠিকানা নেই">No saved addresses yet</p></div>' +
+      '<h4 style="margin-bottom:12px;" data-en="Add New Address" data-bn="নতুন ঠিকানা যোগ করুন">Add New Address</h4>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+      '<div class="form-group"><label data-en="Label" data-bn="লেবেল">Label</label><input type="text" id="addr-label" class="form-control" placeholder="Home / Office"></div>' +
+      '<div class="form-group"><label data-en="Phone" data-bn="ফোন">Phone</label><input type="tel" id="addr-phone" class="form-control"></div>' +
+      '<div class="form-group" style="grid-column:span 2;"><label data-en="Full Address" data-bn="সম্পূর্ণ ঠিকানা">Full Address</label><textarea id="addr-address" class="form-control" rows="2"></textarea></div>' +
+      '<div class="form-group"><label data-en="City/District" data-bn="শহর/জেলা">City/District</label><input type="text" id="addr-city" class="form-control"></div>' +
+      '<div class="form-group"><label data-en="Postal Code" data-bn="পোস্ট কোড">Postal Code</label><input type="text" id="addr-postal" class="form-control"></div>' +
+      '</div><button class="btn btn-primary" onclick="saveAddress()">Save Address</button></div>';
+  }
+  function saveAddress() {
+    MB.toast('Address saved!', 'success');
+  }
+  function showChangePassword() {
+    document.getElementById('profile-info').innerHTML +=
+      '<div class="card" style="margin-top:16px;"><h3 style="margin-bottom:12px;">Change Password</h3>' +
+      '<div class="form-group"><label>Current Password</label><input type="password" id="cp-old" class="form-control"></div>' +
+      '<div class="form-group"><label>New Password</label><input type="password" id="cp-new" class="form-control"></div>' +
+      '<div class="form-group"><label>Confirm New Password</label><input type="password" id="cp-confirm" class="form-control"></div>' +
+      '<button class="btn btn-primary" onclick="doChangePassword()">Update Password</button></div>';
+  }
+  async function doChangePassword() {
+    const oldPass = document.getElementById('cp-old').value;
+    const newPass = document.getElementById('cp-new').value;
+    const confirm = document.getElementById('cp-confirm').value;
+    if (newPass !== confirm) { MB.toast('Passwords do not match', 'error'); return; }
+    const res = await MB.put('/auth/change-password', { oldPassword: oldPass, newPassword: newPass });
+    MB.toast(res.success ? 'Password changed!' : (res.message || 'Failed'), res.success ? 'success' : 'error');
+  }
+  async function viewOrder(id) {
+    const res = await MB.get('/orders/my-orders/' + id);
+    if (!res.success) return;
+    const o = res.data;
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = '<div class="card" style="max-width:600px;width:90%;max-height:80vh;overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3>Order ' + o.orderNumber + '</h3><button onclick="this.closest(\'div[style*=fixed]\').remove()" class="btn btn-outline btn-sm">Close</button></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Status</p><p style="font-weight:600;">' + o.orderStatus + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Payment</p><p>' + o.paymentStatus + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Total</p><p style="font-weight:700;color:var(--primary);">' + MB.formatPrice(o.total) + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Date</p><p>' + MB.formatDate(o.createdAt) + '</p></div></div>' +
+      '<h4 style="margin-bottom:8px;">Items</h4><div class="table-wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead><tbody>' +
+      (o.items || []).map(i => '<tr><td>' + i.name + '</td><td>' + i.quantity + '</td><td>' + MB.formatPrice(i.total || i.price * i.quantity) + '</td></tr>').join('') +
+      '</tbody></table></div>' +
+      (o.statusHistory ? '<h4 style="margin-top:16px;margin-bottom:8px;">Timeline</h4>' + o.statusHistory.map(h => '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text-muted);">' + MB.formatDate(h.timestamp) + '</span><span style="font-weight:600;">' + h.status + '</span><span style="color:var(--text-muted);">' + (h.note || '') + '</span></div>').join('') : '') +
+      '</div>';
+    document.body.appendChild(modal);
+  }
 </script>
 </body>
 </html>

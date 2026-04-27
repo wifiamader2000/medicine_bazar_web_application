@@ -78,6 +78,8 @@ app.use('/api/v1/lab-tests', require('./routes/labTests'));
 app.use('/api/v1/pharmacy', require('./routes/pharmacy'));
 app.use('/api/v1/blogs', require('./routes/blogs'));
 app.use('/api/v1/reports', require('./routes/reports'));
+app.use('/api/v1/notifications', require('./routes/notifications'));
+app.use('/api/v1/suppliers', require('./routes/suppliers'));
 app.use('/api/v1', require('./routes/public'));
 
 // Page routes - serve HTML pages
@@ -97,13 +99,15 @@ const pageRoutes = [
   ['/terms', 'pages/terms.html'],
   ['/return', 'pages/return.html'],
   ['/faq', 'pages/faq.html'],
+  ['/doctor-consultation', 'pages/doctor-consultation.html'],
   ['/login', 'pages/login.html'],
   ['/register', 'pages/register.html'],
   ['/account', 'pages/account.html'],
   ['/account/orders', 'pages/account.html'],
   ['/account/prescriptions', 'pages/account.html'],
-  ['/account/wishlist', 'pages/account.html'],
   ['/account/addresses', 'pages/account.html'],
+  ['/account/wishlist', 'pages/account.html'],
+  ['/account/loyalty', 'pages/account.html'],
   ['/account/profile', 'pages/account.html'],
 ];
 

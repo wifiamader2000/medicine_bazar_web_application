@@ -437,4 +437,26 @@ router.delete('/coupons/:id', authenticate, authorize('admin'), asyncHandler(asy
   res.json({ success: true, message: 'Coupon deleted' });
 }));
 
+// Loyalty Points Config
+router.get('/loyalty-config', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const settings = DataService.get('settings').findOne({ key: 'loyalty' });
+  res.json({
+    success: true, data: settings?.value || {
+      enabled: true, pointsPerTaka: 1, redeemRate: 0.1, minRedeemPoints: 100,
+      welcomeBonus: 50, referralBonus: 100, birthdayBonus: 200,
+    },
+  });
+}));
+
+router.put('/loyalty-config', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+  let settings = DataService.get('settings').findOne({ key: 'loyalty' });
+  if (settings) {
+    DataService.get('settings').update(settings.id, { value: req.body });
+  } else {
+    DataService.get('settings').create({ key: 'loyalty', value: req.body });
+  }
+  logAudit(req, 'loyalty_config_updated', req.body);
+  res.json({ success: true, message: 'Loyalty config updated' });
+}));
+
 module.exports = router;

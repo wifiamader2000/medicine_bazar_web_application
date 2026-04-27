@@ -10,6 +10,8 @@
     "build": "node scripts/build.js",
     "lint": "echo 'Lint passed'",
     "seed": "node scripts/seed.js",
+    "seed:medicines": "node scripts/seed-medicines.js",
+    "seed:content": "node scripts/seed-content.js",
     "import": "node scripts/import-medicines.js",
     "migrate": "node scripts/migrate.js",
     "backup": "node scripts/backup.js"

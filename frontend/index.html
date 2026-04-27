@@ -89,6 +89,18 @@
     </div>
   </section>
 
+  <!-- Stats Counter -->
+  <section class="section" style="background:linear-gradient(135deg, #0A6B57 0%, #14B8A6 100%);color:#fff;">
+    <div class="container">
+      <div class="stats-counter" style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center;">
+        <div><div id="stat-products" style="font-size:36px;font-weight:800;">0</div><div style="opacity:0.9;font-size:14px;" data-en="Medicines Available" data-bn="ওষুধ পাওয়া যাচ্ছে">Medicines Available</div></div>
+        <div><div id="stat-categories" style="font-size:36px;font-weight:800;">0</div><div style="opacity:0.9;font-size:14px;" data-en="Categories" data-bn="ক্যাটাগরি">Categories</div></div>
+        <div><div id="stat-brands" style="font-size:36px;font-weight:800;">0</div><div style="opacity:0.9;font-size:14px;" data-en="Trusted Brands" data-bn="বিশ্বস্ত ব্র্যান্ড">Trusted Brands</div></div>
+        <div><div style="font-size:36px;font-weight:800;">24/7</div><div style="opacity:0.9;font-size:14px;" data-en="Customer Support" data-bn="কাস্টমার সাপোর্ট">Customer Support</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Categories -->
   <section class="section">
     <div class="container">
@@ -217,7 +229,20 @@
       try {
         const res = await MB.get('/homepage');
         if (!res.success) return;
-        const { categories, featured, bestSellers, newArrivals } = res.data;
+        const { categories, categoryCount, featured, bestSellers, newArrivals, productCount } = res.data;
+
+        // Stats counter
+        const prodEl = document.getElementById('stat-products');
+        const catEl = document.getElementById('stat-categories');
+        const brandEl = document.getElementById('stat-brands');
+        if (prodEl) prodEl.textContent = productCount || 0;
+        if (catEl) catEl.textContent = categoryCount || categories.length;
+
+        // Get brands count from API
+        try {
+          const brandsRes = await MB.get('/products/brands');
+          if (brandsRes.success && brandEl) brandEl.textContent = brandsRes.data.length;
+        } catch(e) { if (brandEl) brandEl.textContent = '25+'; }
 
         // Categories
         const catIcons = { 'Pain & Fever': '&#128138;', 'Cold & Cough': '&#129319;', 'Diabetes': '&#128137;', 'Heart & Blood Pressure': '&#10084;', 'Antibiotics': '&#128138;', 'Vitamins & Supplements': '&#128170;', 'Gastrointestinal': '&#127860;', 'Skin Care': '&#129526;', 'Eye & Ear': '&#128065;', 'Respiratory': '&#127788;', "Women's Health": '&#9792;', 'Baby & Child': '&#128118;', 'Mental Health': '&#129504;', 'Allergy': '&#129319;', 'Sexual Health': '&#128154;', 'Personal Care': '&#128716;', 'Medical Devices': '&#129658;', 'Herbal & Ayurvedic': '&#127807;' };

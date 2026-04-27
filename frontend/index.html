@@ -229,14 +229,14 @@
       try {
         const res = await MB.get('/homepage');
         if (!res.success) return;
-        const { categories, featured, bestSellers, newArrivals, productCount } = res.data;
+        const { categories, categoryCount, featured, bestSellers, newArrivals, productCount } = res.data;
 
         // Stats counter
         const prodEl = document.getElementById('stat-products');
         const catEl = document.getElementById('stat-categories');
         const brandEl = document.getElementById('stat-brands');
         if (prodEl) prodEl.textContent = productCount || 0;
-        if (catEl) catEl.textContent = categories.length;
+        if (catEl) catEl.textContent = categoryCount || categories.length;
 
         // Get brands count from API
         try {

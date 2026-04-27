@@ -55,6 +55,7 @@ router.get('/homepage', asyncHandler(async (req, res) => {
     data: {
       banners,
       categories: categories.slice(0, 12),
+      categoryCount: categories.length,
       featured,
       newArrivals,
       bestSellers,

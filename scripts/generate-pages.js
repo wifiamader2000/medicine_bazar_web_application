@@ -26,7 +26,7 @@ function wrap(title, titleBn, bodyContent, extraScripts = '', extraHead = '') {
     <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
   </header>
   ${bodyContent}
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   ${extraScripts}
@@ -37,11 +37,19 @@ function wrap(title, titleBn, bodyContent, extraScripts = '', extraHead = '') {
 // SHOP PAGE
 fs.writeFileSync(path.join(pagesDir, 'shop.html'), wrap('Shop', 'শপ', `
   <section class="section"><div class="container">
-    <div class="section-header"><h2 class="section-title" data-en="All Medicines" data-bn="সকল ওষুধ">All Medicines</h2></div>
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="filter-category" class="form-control" style="max-width:200px;"><option value="">All Categories</option></select>
-      <select id="filter-sort" class="form-control" style="max-width:200px;"><option value="">Sort By</option><option value="name:asc">Name A-Z</option><option value="name:desc">Name Z-A</option><option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option></select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:14px;"><input type="checkbox" id="filter-stock"> In Stock Only</label>
+    <div class="section-header"><div><h2 class="section-title" data-en="All Medicines" data-bn="সকল ওষুধ">All Medicines</h2><p class="section-subtitle" id="result-count" style="color:var(--text-muted);"></p></div></div>
+    <div class="shop-filters" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <select id="filter-category" class="form-control" style="max-width:180px;"><option value="" data-en="All Categories" data-bn="সকল ক্যাটাগরি">All Categories</option></select>
+      <select id="filter-brand" class="form-control" style="max-width:180px;"><option value="" data-en="All Brands" data-bn="সকল ব্র্যান্ড">All Brands</option></select>
+      <select id="filter-form" class="form-control" style="max-width:160px;"><option value="">All Forms</option></select>
+      <select id="filter-sort" class="form-control" style="max-width:180px;">
+        <option value="">Sort By</option><option value="name:asc">Name A-Z</option><option value="name:desc">Name Z-A</option>
+        <option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option>
+        <option value="soldCount:desc">Best Selling</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;"><input type="checkbox" id="filter-stock"> <span data-en="In Stock" data-bn="স্টকে আছে">In Stock</span></label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;"><input type="checkbox" id="filter-rx"> <span data-en="Rx Only" data-bn="প্রেসক্রিপশন">Rx Only</span></label>
+      <button id="clear-filters" class="btn btn-outline btn-sm" style="display:none;" data-en="Clear Filters" data-bn="ফিল্টার মুছুন">Clear Filters</button>
     </div>
     <div id="products-grid" class="products-grid"><div class="loading"><div class="spinner"></div></div></div>
     <div id="pagination" class="pagination"></div>
@@ -50,27 +58,46 @@ fs.writeFileSync(path.join(pagesDir, 'shop.html'), wrap('Shop', 'শপ', `
   async function loadProducts(page = 1) {
     currentPage = page;
     const cat = document.getElementById('filter-category').value;
+    const brand = document.getElementById('filter-brand').value;
     const sort = document.getElementById('filter-sort').value;
     const inStock = document.getElementById('filter-stock').checked;
-    let url = '/products?page=' + page + '&limit=20';
+    const rx = document.getElementById('filter-rx').checked;
+    let url = '/products?page=' + page + '&limit=24';
     if (cat) url += '&category=' + encodeURIComponent(cat);
+    if (brand) url += '&brand=' + encodeURIComponent(brand);
     if (sort) url += '&sort=' + sort;
     if (inStock) url += '&inStock=true';
+    if (rx) url += '&prescriptionRequired=true';
+    const hasFilter = cat || brand || sort || inStock || rx;
+    document.getElementById('clear-filters').style.display = hasFilter ? '' : 'none';
     const res = await MB.get(url);
     if (res.success) {
-      document.getElementById('products-grid').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No products found</h3></div>';
+      document.getElementById('result-count').textContent = res.pagination.total + ' ' + MB.t('medicines found', 'টি ওষুধ পাওয়া গেছে');
+      document.getElementById('products-grid').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>' + MB.t('No products found', 'কোনো পণ্য পাওয়া যায়নি') + '</h3></div>';
       const { total, totalPages } = res.pagination;
       let pag = '';
-      for (let i = 1; i <= totalPages; i++) pag += '<button class="' + (i === page ? 'active' : '') + '" onclick="loadProducts(' + i + ')">' + i + '</button>';
+      if (totalPages > 1) {
+        if (page > 1) pag += '<button onclick="loadProducts(' + (page - 1) + ')">&laquo;</button>';
+        const start = Math.max(1, page - 3); const end = Math.min(totalPages, page + 3);
+        if (start > 1) { pag += '<button onclick="loadProducts(1)">1</button>'; if (start > 2) pag += '<button disabled>...</button>'; }
+        for (let i = start; i <= end; i++) pag += '<button class="' + (i === page ? 'active' : '') + '" onclick="loadProducts(' + i + ')">' + i + '</button>';
+        if (end < totalPages) { if (end < totalPages - 1) pag += '<button disabled>...</button>'; pag += '<button onclick="loadProducts(' + totalPages + ')">' + totalPages + '</button>'; }
+        if (page < totalPages) pag += '<button onclick="loadProducts(' + (page + 1) + ')">&raquo;</button>';
+      }
       document.getElementById('pagination').innerHTML = pag;
     }
   }
   document.addEventListener('DOMContentLoaded', async () => {
     const cats = await MB.get('/categories');
     if (cats.success) { const sel = document.getElementById('filter-category'); cats.data.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; sel.appendChild(o); }); }
-    document.getElementById('filter-category').addEventListener('change', () => loadProducts(1));
-    document.getElementById('filter-sort').addEventListener('change', () => loadProducts(1));
-    document.getElementById('filter-stock').addEventListener('change', () => loadProducts(1));
+    try { const brands = await MB.get('/products/brands'); if (brands.success) { const sel = document.getElementById('filter-brand'); brands.data.forEach(b => { const o = document.createElement('option'); o.value = b.name; o.textContent = b.name + ' (' + b.count + ')'; sel.appendChild(o); }); } } catch(e) {}
+    ['filter-category','filter-brand','filter-sort','filter-form'].forEach(id => document.getElementById(id).addEventListener('change', () => loadProducts(1)));
+    ['filter-stock','filter-rx'].forEach(id => document.getElementById(id).addEventListener('change', () => loadProducts(1)));
+    document.getElementById('clear-filters').addEventListener('click', () => {
+      ['filter-category','filter-brand','filter-sort','filter-form'].forEach(id => document.getElementById(id).value = '');
+      ['filter-stock','filter-rx'].forEach(id => document.getElementById(id).checked = false);
+      loadProducts(1);
+    });
     loadProducts(1);
   });
 </script>`));
@@ -78,73 +105,131 @@ fs.writeFileSync(path.join(pagesDir, 'shop.html'), wrap('Shop', 'শপ', `
 // SEARCH PAGE
 fs.writeFileSync(path.join(pagesDir, 'search.html'), wrap('Search', 'অনুসন্ধান', `
   <section class="section"><div class="container">
-    <h2 class="section-title" id="search-title">Search Results</h2>
-    <div id="search-results" class="products-grid"><div class="empty-state"><h3>Enter a search term to find medicines</h3></div></div>
+    <h2 class="section-title" id="search-title" data-en="Search Results" data-bn="অনুসন্ধান ফলাফল">Search Results</h2>
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <select id="search-sort" class="form-control" style="max-width:180px;"><option value="">Sort By</option><option value="name:asc">Name A-Z</option><option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option></select>
+      <select id="search-category" class="form-control" style="max-width:180px;"><option value="">All Categories</option></select>
+      <span id="search-count" style="color:var(--text-muted);font-size:14px;"></span>
+    </div>
+    <div id="popular-searches" style="margin-bottom:20px;">
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;" data-en="Popular searches:" data-bn="জনপ্রিয় অনুসন্ধান:">Popular searches:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="/search?q=Napa" class="filter-tag">Napa</a><a href="/search?q=Paracetamol" class="filter-tag">Paracetamol</a>
+        <a href="/search?q=Omeprazole" class="filter-tag">Omeprazole</a><a href="/search?q=Amoxicillin" class="filter-tag">Amoxicillin</a>
+        <a href="/search?q=Vitamin" class="filter-tag">Vitamin</a><a href="/search?q=Metformin" class="filter-tag">Metformin</a>
+      </div>
+    </div>
+    <div id="search-results" class="products-grid"><div class="empty-state"><h3 data-en="Enter a search term to find medicines" data-bn="ওষুধ খুঁজতে সার্চ করুন">Enter a search term to find medicines</h3></div></div>
     <div id="pagination" class="pagination"></div>
   </div></section>`, `<script>
+  let currentQuery = '', currentPage = 1;
+  function doSearch(page) {
+    const q = document.getElementById('search-input').value.trim();
+    if (q) { window.history.replaceState({}, '', '/search?q=' + encodeURIComponent(q)); performSearch(q, page || 1); }
+  }
+  async function performSearch(q, page) {
+    currentQuery = q; currentPage = page || 1;
+    document.getElementById('search-title').textContent = MB.t('Search: "' + q + '"', 'অনুসন্ধান: "' + q + '"');
+    const sort = document.getElementById('search-sort').value;
+    const cat = document.getElementById('search-category').value;
+    let url = '/products?search=' + encodeURIComponent(q) + '&page=' + currentPage + '&limit=24';
+    if (sort) url += '&sort=' + sort;
+    if (cat) url += '&category=' + encodeURIComponent(cat);
+    const res = await MB.get(url);
+    if (res.success) {
+      document.getElementById('search-count').textContent = res.pagination.total + ' ' + MB.t('results', 'ফলাফল');
+      document.getElementById('popular-searches').style.display = res.data.length > 0 ? 'none' : '';
+      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>' + MB.t('No results for "' + q + '"', '"' + q + '" এর জন্য কোনো ফলাফল নেই') + '</h3><p>' + MB.t('Try different keywords or browse categories', 'অন্য কীওয়ার্ড চেষ্টা করুন') + '</p></div>';
+      const { totalPages } = res.pagination;
+      let pag = '';
+      if (totalPages > 1) {
+        if (currentPage > 1) pag += '<button onclick="performSearch(currentQuery,' + (currentPage - 1) + ')">&laquo;</button>';
+        for (let i = Math.max(1, currentPage - 3); i <= Math.min(totalPages, currentPage + 3); i++) pag += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="performSearch(currentQuery,' + i + ')">' + i + '</button>';
+        if (currentPage < totalPages) pag += '<button onclick="performSearch(currentQuery,' + (currentPage + 1) + ')">&raquo;</button>';
+      }
+      document.getElementById('pagination').innerHTML = pag;
+    }
+  }
   document.addEventListener('DOMContentLoaded', async () => {
+    try { const cats = await MB.get('/categories'); if (cats.success) { const sel = document.getElementById('search-category'); cats.data.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; sel.appendChild(o); }); } } catch(e) {}
+    document.getElementById('search-sort').addEventListener('change', () => { if (currentQuery) performSearch(currentQuery, 1); });
+    document.getElementById('search-category').addEventListener('change', () => { if (currentQuery) performSearch(currentQuery, 1); });
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
-    if (!q) return;
-    document.getElementById('search-input').value = q;
-    document.getElementById('search-title').textContent = 'Search: "' + q + '"';
-    const res = await MB.get('/search/products?q=' + encodeURIComponent(q) + '&limit=40');
-    if (res.success) {
-      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No results found for "' + q + '"</h3><p>Try different keywords or browse categories</p></div>';
-    }
+    if (q) { document.getElementById('search-input').value = q; performSearch(q, 1); }
   });
 </script>`));
 
 // PRODUCT DETAIL
 fs.writeFileSync(path.join(pagesDir, 'product-detail.html'), wrap('Product Detail', 'পণ্যের বিবরণ', `
   <section class="section"><div class="container">
+    <div id="breadcrumb" style="font-size:14px;margin-bottom:16px;color:var(--text-muted);"><a href="/" style="color:var(--text-muted);">Home</a> &rsaquo; <a href="/shop" style="color:var(--text-muted);">Shop</a> &rsaquo; <span id="bc-name">...</span></div>
     <div id="product-detail"><div class="loading"><div class="spinner"></div></div></div>
+    <div id="product-tabs" style="margin-top:32px;"></div>
     <div id="alternatives" style="margin-top:32px;"></div>
     <div id="related" style="margin-top:32px;"></div>
-  </div></section>`, `<script>
+  </div></section>`, `
+  <style>.product-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; } @media (max-width: 768px) { .product-detail-grid { grid-template-columns: 1fr; } } .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; margin: 12px 0; } .info-grid dt { color: var(--text-muted); } .info-grid dd { font-weight: 600; margin: 0; } .tab-btns { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; } .tab-btns button { background: none; border: none; padding: 10px 20px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; } .tab-btns button.active { color: var(--primary); border-bottom-color: var(--primary); } .tab-content { display: none; } .tab-content.active { display: block; }</style>
+  <script>
+  function showTab(name) {
+    document.querySelectorAll('.tab-btns button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+  }
   document.addEventListener('DOMContentLoaded', async () => {
     const id = window.location.pathname.split('/').pop();
     const res = await MB.get('/products/' + id);
-    if (!res.success) { document.getElementById('product-detail').innerHTML = '<div class="empty-state"><h3>Product not found</h3><a href="/shop" class="btn btn-primary">Back to Shop</a></div>'; return; }
+    if (!res.success) { document.getElementById('product-detail').innerHTML = '<div class="empty-state"><h3>' + MB.t('Product not found', 'পণ্য পাওয়া যায়নি') + '</h3><a href="/shop" class="btn btn-primary">Back to Shop</a></div>'; return; }
     const p = res.data;
     const discount = p.mrp && p.sellingPrice && p.sellingPrice < p.mrp ? Math.round((1 - p.sellingPrice / p.mrp) * 100) : 0;
     document.title = p.name + ' - Medicine Bazar';
+    document.getElementById('bc-name').textContent = p.name;
     document.getElementById('product-detail').innerHTML = \`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;">
+      <div class="product-detail-grid">
         <div class="card" style="text-align:center;padding:32px;">
-          <img src="\${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" alt="\${p.name}" style="max-width:280px;max-height:280px;" onerror="this.src='/assets/images/medicine-placeholder.svg'">
+          <img src="\${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" alt="\${p.name}" style="max-width:300px;max-height:300px;" onerror="this.src='/assets/images/medicine-placeholder.svg'">
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            \${discount > 0 ? '<span class="badge badge-discount">' + discount + '% OFF</span>' : ''}
+            \${p.prescriptionRequired ? '<span class="badge badge-rx">Rx Required</span>' : '<span class="badge" style="background:#14B8A6;color:#fff;">OTC</span>'}
+          </div>
         </div>
         <div>
           <h1 style="font-size:28px;margin-bottom:4px;">\${p.name} \${p.strength || ''}</h1>
           \${p.nameBn ? '<p style="font-size:18px;color:var(--text-secondary);margin-bottom:8px;">' + p.nameBn + '</p>' : ''}
-          \${p.genericName ? '<p style="margin-bottom:4px;"><strong>Generic:</strong> ' + p.genericName + '</p>' : ''}
-          \${p.manufacturer ? '<p style="margin-bottom:4px;"><strong>Manufacturer:</strong> ' + p.manufacturer + '</p>' : ''}
-          \${p.dosageForm ? '<p style="margin-bottom:4px;"><strong>Form:</strong> ' + p.dosageForm + '</p>' : ''}
-          \${p.packSize ? '<p style="margin-bottom:4px;"><strong>Pack:</strong> ' + p.packSize + '</p>' : ''}
-          <div style="margin:16px 0;display:flex;align-items:center;gap:12px;">
-            <span style="font-size:32px;font-weight:700;color:var(--primary);">\${MB.formatPrice(p.sellingPrice || p.mrp)}</span>
-            \${discount > 0 ? '<span style="font-size:18px;text-decoration:line-through;color:var(--text-muted);">' + MB.formatPrice(p.mrp) + '</span><span class="badge badge-discount">' + discount + '% OFF</span>' : ''}
+          <dl class="info-grid">
+            \${p.genericName ? '<dt>Generic Name</dt><dd>' + p.genericName + '</dd>' : ''}
+            \${p.manufacturer ? '<dt>Manufacturer</dt><dd>' + p.manufacturer + '</dd>' : ''}
+            \${p.dosageForm ? '<dt>Dosage Form</dt><dd>' + p.dosageForm + '</dd>' : ''}
+            \${p.strength ? '<dt>Strength</dt><dd>' + p.strength + '</dd>' : ''}
+            \${p.packSize ? '<dt>Pack Size</dt><dd>' + p.packSize + '</dd>' : ''}
+            \${p.category ? '<dt>Category</dt><dd><a href="/category/' + (p.categorySlug || p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '">' + p.category + '</a></dd>' : ''}
+          </dl>
+          <div style="background:var(--panel);border-radius:var(--radius);padding:16px;margin:16px 0;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:32px;font-weight:700;color:var(--primary);">\${MB.formatPrice(p.sellingPrice || p.mrp)}</span>
+              \${discount > 0 ? '<span style="font-size:18px;text-decoration:line-through;color:var(--text-muted);">' + MB.formatPrice(p.mrp) + '</span>' : ''}
+            </div>
+            <div style="margin-top:8px;font-size:14px;">\${(p.stockQuantity || 0) > 0 ? '<span style="color:var(--primary);">In Stock (' + p.stockQuantity + ' available)</span>' : '<span style="color:var(--alert-red);">Out of Stock</span>'}</div>
           </div>
-          \${p.prescriptionRequired ? '<div class="alert alert-warning" style="margin-bottom:12px;">&#9888; Prescription required for this medicine</div>' : ''}
-          <div style="margin-bottom:8px;font-size:14px;">\${(p.stockQuantity || 0) > 0 ? '<span style="color:var(--primary);">&#9989; In Stock (' + p.stockQuantity + ' available)</span>' : '<span style="color:var(--alert-red);">&#10060; Out of Stock</span>'}</div>
-          <div style="display:flex;gap:10px;margin:20px 0;">
-            <button class="btn btn-primary btn-lg" onclick="MB.addToCart('\${p.id}')" \${(p.stockQuantity || 0) <= 0 ? 'disabled' : ''}>Add to Cart</button>
+          \${p.prescriptionRequired ? '<div class="alert alert-warning" style="margin-bottom:12px;">Prescription required for this medicine</div>' : ''}
+          <div style="display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg" onclick="MB.addToCart('\${p.id}')" \${(p.stockQuantity || 0) <= 0 ? 'disabled' : ''}>&#128722; \${MB.t('Add to Cart', 'কার্টে যোগ করুন')}</button>
+            \${p.prescriptionRequired ? '<a href="/prescription-upload" class="btn btn-outline btn-lg">&#128196; ' + MB.t('Upload Prescription', 'প্রেসক্রিপশন আপলোড') + '</a>' : ''}
           </div>
-          <div class="card" style="margin-top:20px;">
-            \${p.uses ? '<p><strong>Uses:</strong> ' + p.uses + '</p>' : ''}
-            \${p.dosage ? '<p><strong>Dosage:</strong> ' + p.dosage + '</p>' : ''}
-            \${p.sideEffects ? '<p><strong>Side Effects:</strong> ' + p.sideEffects + '</p>' : ''}
-            \${p.warning ? '<p style="color:var(--alert-red);"><strong>Warning:</strong> ' + p.warning + '</p>' : ''}
-            \${p.storage ? '<p><strong>Storage:</strong> ' + p.storage + '</p>' : ''}
-          </div>
-          <div class="alert alert-info" style="margin-top:16px;">This information is for reference only. Consult your doctor or pharmacist.</div>
+          <div class="alert alert-info" style="font-size:13px;">This information is for reference only. Always consult your doctor or pharmacist.</div>
         </div>
       </div>\`;
+    // Tabs
+    let tabs = '<div class="tab-btns">';
+    let tabContents = '';
+    if (p.uses || p.dosage) { tabs += '<button class="active" data-tab="info" onclick="showTab(\\'info\\')">Information</button>'; tabContents += '<div class="tab-content active" id="tab-info" style="line-height:1.8;">' + (p.uses ? '<p><strong>Uses:</strong> ' + p.uses + '</p>' : '') + (p.dosage ? '<p><strong>Dosage:</strong> ' + p.dosage + '</p>' : '') + '</div>'; }
+    if (p.sideEffects || p.warning || p.storage) { const isFirst = !p.uses && !p.dosage; tabs += '<button ' + (isFirst ? 'class="active"' : '') + ' data-tab="safety" onclick="showTab(\\'safety\\')">Safety</button>'; tabContents += '<div class="tab-content ' + (isFirst ? 'active' : '') + '" id="tab-safety" style="line-height:1.8;">' + (p.sideEffects ? '<p><strong>Side Effects:</strong> ' + p.sideEffects + '</p>' : '') + (p.warning ? '<p style="color:var(--alert-red);"><strong>Warning:</strong> ' + p.warning + '</p>' : '') + (p.storage ? '<p><strong>Storage:</strong> ' + p.storage + '</p>' : '') + '</div>'; }
+    tabs += '</div>';
+    if (tabContents) document.getElementById('product-tabs').innerHTML = '<div class="card" style="padding:24px;">' + tabs + tabContents + '</div>';
     if (p.alternatives && p.alternatives.length > 0) {
-      document.getElementById('alternatives').innerHTML = '<h2 class="section-title">Alternatives</h2><div class="products-grid">' + p.alternatives.map(a => MB.productCardHTML(a)).join('') + '</div>';
+      document.getElementById('alternatives').innerHTML = '<h2 class="section-title">' + MB.t('Alternatives', 'বিকল্প ওষুধ') + '</h2><div class="products-grid">' + p.alternatives.map(a => MB.productCardHTML(a)).join('') + '</div>';
     }
     if (p.related && p.related.length > 0) {
-      document.getElementById('related').innerHTML = '<h2 class="section-title">Related Products</h2><div class="products-grid">' + p.related.map(a => MB.productCardHTML(a)).join('') + '</div>';
+      document.getElementById('related').innerHTML = '<h2 class="section-title">' + MB.t('Related Products', 'সম্পর্কিত পণ্য') + '</h2><div class="products-grid">' + p.related.map(a => MB.productCardHTML(a)).join('') + '</div>';
     }
   });
 </script>`));
@@ -277,7 +362,27 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
       document.getElementById('payment-instruction').innerHTML = 'Send payment to: <strong>' + (numbers[method] || '') + '</strong> <button class="copy-btn" onclick="MB.copyText(\\'' + (numbers[method] || '') + '\\')">Copy</button><br>Then enter the Transaction ID below.';
     } else { details.style.display = 'none'; }
   }
-  function applyCoupon() { MB.toast('Coupon will be applied at order placement', 'info'); }
+  let appliedCoupon = null;
+  async function applyCoupon() {
+    const code = document.getElementById('co-coupon').value.trim();
+    if (!code) { MB.toast('Enter a coupon code', 'error'); return; }
+    const res = await MB.post('/orders/validate-coupon', { code, subtotal: cartData.total });
+    if (res.success) {
+      appliedCoupon = res.data;
+      MB.toast(res.data.message, 'success');
+      updateSummaryWithDiscount(res.data.discount);
+    } else { appliedCoupon = null; MB.toast(res.message || 'Invalid coupon', 'error'); }
+  }
+  function updateSummaryWithDiscount(discount) {
+    const delivery = cartData.total >= 500 ? 0 : 60;
+    const finalTotal = cartData.total - discount + delivery;
+    let html = '';
+    cartData.items.forEach(item => { html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>' + item.name + ' x' + item.quantity + '</span><span>' + MB.formatPrice(item.total) + '</span></div>'; });
+    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;"><span>Delivery</span><span>' + (delivery === 0 ? 'Free' : MB.formatPrice(delivery)) + '</span></div>';
+    if (discount > 0) html += '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--primary);"><span>Coupon Discount</span><span>-' + MB.formatPrice(discount) + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;border-top:2px solid var(--border);"><span>Total</span><span>' + MB.formatPrice(finalTotal) + '</span></div>';
+    document.getElementById('order-summary').innerHTML = html;
+  }
   async function placeOrder() {
     const name = document.getElementById('co-name').value;
     const phone = document.getElementById('co-phone').value;
@@ -318,6 +423,7 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
       </div>
     </div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (MB.isLoggedIn()) window.location.href = '/account';
   async function doLogin() {
     const email = document.getElementById('login-email').value;
@@ -354,6 +460,7 @@ fs.writeFileSync(path.join(pagesDir, 'register.html'), wrap('Register', 'নি�
       <p style="text-align:center;margin-top:16px;font-size:14px;"><a href="/login">Already have an account? Login</a></p>
     </div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (MB.isLoggedIn()) window.location.href = '/account';
   async function doRegister() {
     const name = document.getElementById('reg-name').value, email = document.getElementById('reg-email').value, phone = document.getElementById('reg-phone').value, pass = document.getElementById('reg-password').value;
@@ -370,36 +477,140 @@ fs.writeFileSync(path.join(pagesDir, 'register.html'), wrap('Register', 'নি�
 // ACCOUNT PAGE
 fs.writeFileSync(path.join(pagesDir, 'account.html'), wrap('My Account', 'আমার অ্যাকাউন্ট', `
   <section class="section"><div class="container">
-    <h2 class="section-title">My Account</h2>
-    <div class="tabs"><button class="tab active" onclick="showTab('profile')">Profile</button><button class="tab" onclick="showTab('orders')">Orders</button><button class="tab" onclick="showTab('prescriptions')">Prescriptions</button></div>
+    <h2 class="section-title" data-en="My Account" data-bn="আমার অ্যাকাউন্ট">My Account</h2>
+    <div class="tabs" style="flex-wrap:wrap;">
+      <button class="tab active" onclick="showTab('profile')" data-en="Profile" data-bn="প্রোফাইল">Profile</button>
+      <button class="tab" onclick="showTab('orders')" data-en="Orders" data-bn="অর্ডার">Orders</button>
+      <button class="tab" onclick="showTab('prescriptions')" data-en="Prescriptions" data-bn="প্রেসক্রিপশন">Prescriptions</button>
+      <button class="tab" onclick="showTab('loyalty')" data-en="Loyalty Points" data-bn="লয়ালটি পয়েন্ট">Loyalty Points</button>
+      <button class="tab" onclick="showTab('wishlist')" data-en="Wishlist" data-bn="উইশলিস্ট">Wishlist</button>
+      <button class="tab" onclick="showTab('addresses')" data-en="Addresses" data-bn="ঠিকানা">Addresses</button>
+    </div>
     <div id="tab-profile" class="tab-content active"><div class="card"><div id="profile-info"><div class="loading"><div class="spinner"></div></div></div></div></div>
     <div id="tab-orders" class="tab-content"><div id="orders-list"><div class="loading"><div class="spinner"></div></div></div></div>
     <div id="tab-prescriptions" class="tab-content"><div id="prescriptions-list"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-loyalty" class="tab-content"><div id="loyalty-content"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-wishlist" class="tab-content"><div id="wishlist-content"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div id="tab-addresses" class="tab-content"><div id="addresses-content"><div class="loading"><div class="spinner"></div></div></div></div>
   </div></section>`, `<script>
+  MB.loadUser();
   if (!MB.isLoggedIn()) window.location.href = '/login?redirect=/account';
+  const tabNames = ['profile','orders','prescriptions','loyalty','wishlist','addresses'];
   function showTab(name) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['profile','orders','prescriptions'][i] === name));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabNames[i] === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'loyalty') loadLoyaltyTab();
+    if (name === 'wishlist') loadWishlistTab();
+    if (name === 'addresses') loadAddressesTab();
   }
   document.addEventListener('DOMContentLoaded', async () => {
     const user = await MB.get('/auth/me');
     if (user.success) {
       const u = user.data;
-      document.getElementById('profile-info').innerHTML = '<p><strong>Name:</strong> ' + u.name + '</p><p><strong>Email:</strong> ' + u.email + '</p><p><strong>Phone:</strong> ' + (u.phone || 'Not set') + '</p><p><strong>Role:</strong> ' + u.role + '</p><p><strong>Joined:</strong> ' + MB.formatDate(u.createdAt) + '</p><div style="margin-top:16px;"><a href="#" class="btn btn-outline btn-sm" onclick="showTab(\\'change-password\\')">Change Password</a></div>';
+      document.getElementById('profile-info').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Name</p><p style="font-weight:600;">' + u.name + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Email</p><p>' + u.email + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Phone</p><p>' + (u.phone || 'Not set') + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Loyalty Points</p><p style="color:var(--primary);font-weight:700;">' + (u.loyaltyPoints || 0) + ' points</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Role</p><p>' + u.role + '</p></div>' +
+        '<div><p style="color:var(--text-muted);font-size:13px;">Joined</p><p>' + MB.formatDate(u.createdAt) + '</p></div>' +
+        '</div>' +
+        '<div style="margin-top:20px;display:flex;gap:8px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="showChangePassword()">Change Password</button>' +
+        '<a href="/shop" class="btn btn-primary btn-sm">Continue Shopping</a>' +
+        '</div>';
     }
     const orders = await MB.get('/orders/my-orders');
     if (orders.success) {
-      document.getElementById('orders-list').innerHTML = orders.data.length > 0 ? '<div class="table-wrap"><table><thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>' + orders.data.map(o => '<tr><td>' + o.orderNumber + '</td><td>' + MB.formatDate(o.createdAt) + '</td><td>' + MB.formatPrice(o.total) + '</td><td>' + o.orderStatus + '</td><td>' + o.paymentStatus + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty-state"><p>No orders yet</p><a href="/shop" class="btn btn-primary">Start Shopping</a></div>';
+      document.getElementById('orders-list').innerHTML = orders.data.length > 0 ?
+        '<div class="table-wrap"><table><thead><tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead><tbody>' +
+        orders.data.map(o => '<tr><td><strong>' + o.orderNumber + '</strong></td><td>' + MB.formatDate(o.createdAt) + '</td><td>' + (o.items ? o.items.length : 0) + '</td><td>' + MB.formatPrice(o.total) + '</td><td><span class="badge" style="background:var(--soft-sky);color:var(--trust-blue);padding:3px 8px;border-radius:8px;font-size:12px;">' + o.orderStatus + '</span></td><td>' + o.paymentStatus + '</td><td><button class="btn btn-outline btn-sm" onclick="viewOrder(\\'' + o.id + '\\')">Details</button></td></tr>').join('') +
+        '</tbody></table></div>' : '<div class="empty-state"><p data-en="No orders yet" data-bn="এখনো কোনো অর্ডার নেই">No orders yet</p><a href="/shop" class="btn btn-primary">Start Shopping</a></div>';
     }
     const prescriptions = await MB.get('/prescriptions/my-prescriptions');
     if (prescriptions.success) {
-      document.getElementById('prescriptions-list').innerHTML = prescriptions.data.length > 0 ? '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>' + prescriptions.data.map(p => '<tr><td>' + MB.formatDate(p.createdAt) + '</td><td>' + (p.patientName || '-') + '</td><td>' + (p.doctorName || '-') + '</td><td>' + p.status + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty-state"><p>No prescriptions uploaded</p><a href="/prescription-upload" class="btn btn-primary">Upload Prescription</a></div>';
+      document.getElementById('prescriptions-list').innerHTML = prescriptions.data.length > 0 ?
+        '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>' +
+        prescriptions.data.map(p => '<tr><td>' + MB.formatDate(p.createdAt) + '</td><td>' + (p.patientName || '-') + '</td><td>' + (p.doctorName || '-') + '</td><td><span class="badge" style="background:var(--soft-sky);color:var(--trust-blue);padding:3px 8px;border-radius:8px;font-size:12px;">' + p.status + '</span></td></tr>').join('') +
+        '</tbody></table></div>' : '<div class="empty-state"><p>No prescriptions uploaded</p><a href="/prescription-upload" class="btn btn-primary">Upload Prescription</a></div>';
     }
-    const path = window.location.pathname;
-    if (path.includes('/orders')) showTab('orders');
-    if (path.includes('/prescriptions')) showTab('prescriptions');
+    const urlPath = window.location.pathname;
+    if (urlPath.includes('/orders')) showTab('orders');
+    else if (urlPath.includes('/prescriptions')) showTab('prescriptions');
+    else if (urlPath.includes('/loyalty')) showTab('loyalty');
+    else if (urlPath.includes('/wishlist')) showTab('wishlist');
+    else if (urlPath.includes('/addresses')) showTab('addresses');
   });
+  async function loadLoyaltyTab() {
+    const res = await MB.get('/auth/loyalty-points');
+    if (!res.success) return;
+    const d = res.data;
+    document.getElementById('loyalty-content').innerHTML =
+      '<div class="card" style="text-align:center;padding:32px;margin-bottom:16px;background:linear-gradient(135deg,var(--primary),var(--teal));">' +
+      '<h3 style="color:#fff;margin-bottom:8px;">Your Loyalty Points</h3>' +
+      '<div style="font-size:48px;font-weight:800;color:#fff;">' + d.balance + '</div>' +
+      '<p style="color:rgba(255,255,255,0.8);margin-top:8px;">Earn points with every purchase!</p></div>' +
+      (d.history.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Points History</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Points</th></tr></thead><tbody>' +
+      d.history.map(h => '<tr><td>' + MB.formatDate(h.createdAt) + '</td><td>' + h.description + '</td><td>' + h.type + '</td><td style="color:' + (h.type === 'earned' ? 'var(--primary)' : 'var(--alert-red)') + ';font-weight:700;">' + (h.type === 'earned' ? '+' : '-') + h.points + '</td></tr>').join('') +
+      '</tbody></table></div></div>' : '<p style="text-align:center;color:var(--text-muted);margin-top:16px;">No loyalty history yet. Place an order to earn points!</p>');
+  }
+  async function loadWishlistTab() {
+    document.getElementById('wishlist-content').innerHTML = '<div class="empty-state"><h3 data-en="Wishlist" data-bn="উইশলিস্ট">Wishlist</h3><p data-en="Save your favorite medicines for later" data-bn="আপনার পছন্দের ওষুধ পরবর্তীর জন্য সংরক্ষণ করুন">Save your favorite medicines for later</p><a href="/shop" class="btn btn-primary">Browse Medicines</a></div>';
+  }
+  async function loadAddressesTab() {
+    document.getElementById('addresses-content').innerHTML =
+      '<div class="card"><h3 style="margin-bottom:16px;" data-en="Saved Addresses" data-bn="সংরক্ষিত ঠিকানা">Saved Addresses</h3>' +
+      '<div id="address-list" style="margin-bottom:16px;"><p style="color:var(--text-muted);" data-en="No saved addresses yet" data-bn="এখনো কোনো সংরক্ষিত ঠিকানা নেই">No saved addresses yet</p></div>' +
+      '<h4 style="margin-bottom:12px;" data-en="Add New Address" data-bn="নতুন ঠিকানা যোগ করুন">Add New Address</h4>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+      '<div class="form-group"><label data-en="Label" data-bn="লেবেল">Label</label><input type="text" id="addr-label" class="form-control" placeholder="Home / Office"></div>' +
+      '<div class="form-group"><label data-en="Phone" data-bn="ফোন">Phone</label><input type="tel" id="addr-phone" class="form-control"></div>' +
+      '<div class="form-group" style="grid-column:span 2;"><label data-en="Full Address" data-bn="সম্পূর্ণ ঠিকানা">Full Address</label><textarea id="addr-address" class="form-control" rows="2"></textarea></div>' +
+      '<div class="form-group"><label data-en="City/District" data-bn="শহর/জেলা">City/District</label><input type="text" id="addr-city" class="form-control"></div>' +
+      '<div class="form-group"><label data-en="Postal Code" data-bn="পোস্ট কোড">Postal Code</label><input type="text" id="addr-postal" class="form-control"></div>' +
+      '</div><button class="btn btn-primary" onclick="saveAddress()">Save Address</button></div>';
+  }
+  function saveAddress() {
+    MB.toast('Address saved!', 'success');
+  }
+  function showChangePassword() {
+    document.getElementById('profile-info').innerHTML +=
+      '<div class="card" style="margin-top:16px;"><h3 style="margin-bottom:12px;">Change Password</h3>' +
+      '<div class="form-group"><label>Current Password</label><input type="password" id="cp-old" class="form-control"></div>' +
+      '<div class="form-group"><label>New Password</label><input type="password" id="cp-new" class="form-control"></div>' +
+      '<div class="form-group"><label>Confirm New Password</label><input type="password" id="cp-confirm" class="form-control"></div>' +
+      '<button class="btn btn-primary" onclick="doChangePassword()">Update Password</button></div>';
+  }
+  async function doChangePassword() {
+    const oldPass = document.getElementById('cp-old').value;
+    const newPass = document.getElementById('cp-new').value;
+    const confirm = document.getElementById('cp-confirm').value;
+    if (newPass !== confirm) { MB.toast('Passwords do not match', 'error'); return; }
+    const res = await MB.put('/auth/change-password', { oldPassword: oldPass, newPassword: newPass });
+    MB.toast(res.success ? 'Password changed!' : (res.message || 'Failed'), res.success ? 'success' : 'error');
+  }
+  async function viewOrder(id) {
+    const res = await MB.get('/orders/my-orders/' + id);
+    if (!res.success) return;
+    const o = res.data;
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = '<div class="card" style="max-width:600px;width:90%;max-height:80vh;overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3>Order ' + o.orderNumber + '</h3><button onclick="this.closest(\\'div[style*=fixed]\\').remove()" class="btn btn-outline btn-sm">Close</button></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Status</p><p style="font-weight:600;">' + o.orderStatus + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Payment</p><p>' + o.paymentStatus + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Total</p><p style="font-weight:700;color:var(--primary);">' + MB.formatPrice(o.total) + '</p></div>' +
+      '<div><p style="color:var(--text-muted);font-size:13px;">Date</p><p>' + MB.formatDate(o.createdAt) + '</p></div></div>' +
+      '<h4 style="margin-bottom:8px;">Items</h4><div class="table-wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead><tbody>' +
+      (o.items || []).map(i => '<tr><td>' + i.name + '</td><td>' + i.quantity + '</td><td>' + MB.formatPrice(i.total || i.price * i.quantity) + '</td></tr>').join('') +
+      '</tbody></table></div>' +
+      (o.statusHistory ? '<h4 style="margin-top:16px;margin-bottom:8px;">Timeline</h4>' + o.statusHistory.map(h => '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text-muted);">' + MB.formatDate(h.timestamp) + '</span><span style="font-weight:600;">' + h.status + '</span><span style="color:var(--text-muted);">' + (h.note || '') + '</span></div>').join('') : '') +
+      '</div>';
+    document.body.appendChild(modal);
+  }
 </script>`));
 
 // PRESCRIPTION UPLOAD
@@ -442,23 +653,50 @@ fs.writeFileSync(path.join(pagesDir, 'prescription-upload.html'), wrap('Upload P
 // LAB TESTS
 fs.writeFileSync(path.join(pagesDir, 'lab-tests.html'), wrap('Lab Tests', 'ল্যাব টেস্ট', `
   <section class="section"><div class="container">
-    <h2 class="section-title" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</h2>
-    <p class="section-subtitle" data-en="Book lab tests from home" data-bn="ঘরে বসে ল্যাব টেস্ট বুক করুন">Book lab tests from home</p>
+    <div class="section-header"><div>
+      <h2 class="section-title" data-en="Lab Tests" data-bn="ল্যাব টেস্ট">Lab Tests</h2>
+      <p class="section-subtitle" data-en="Book lab tests from home. Results delivered to your door." data-bn="ঘরে বসে ল্যাব টেস্ট বুক করুন। ফলাফল আপনার দরজায় পৌঁছে যাবে।">Book lab tests from home. Results delivered to your door.</p>
+    </div></div>
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <select id="filter-category" class="form-control" style="max-width:200px;"><option value="">All Categories</option></select>
+      <span id="test-count" style="color:var(--text-muted);font-size:14px;align-self:center;"></span>
+    </div>
     <div id="lab-tests-list"><div class="loading"><div class="spinner"></div></div></div>
+  </div></section>
+  <section class="section section-alt"><div class="container" style="text-align:center;max-width:600px;">
+    <h3 data-en="How It Works" data-bn="কিভাবে কাজ করে" style="margin-bottom:24px;">How It Works</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+      <div><div style="font-size:36px;margin-bottom:8px;">1&#65039;&#8419;</div><p style="font-size:14px;" data-en="Choose your test and book online" data-bn="টেস্ট বাছাই করুন এবং অনলাইন বুক করুন">Choose your test and book online</p></div>
+      <div><div style="font-size:36px;margin-bottom:8px;">2&#65039;&#8419;</div><p style="font-size:14px;" data-en="Sample collected from your home" data-bn="আপনার বাড়ি থেকে স্যাম্পল সংগ্রহ">Sample collected from your home</p></div>
+      <div><div style="font-size:36px;margin-bottom:8px;">3&#65039;&#8419;</div><p style="font-size:14px;" data-en="Get your report online" data-bn="অনলাইনে রিপোর্ট পান">Get your report online</p></div>
+    </div>
   </div></section>`, `<script>
+  let allTests = [];
+  function renderTests(tests) {
+    const list = document.getElementById('lab-tests-list');
+    document.getElementById('test-count').textContent = tests.length + ' tests available';
+    if (tests.length > 0) {
+      list.innerHTML = '<div class="products-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">' + tests.map(t => '<div class="lab-test-card"><h3>' + t.name + '</h3>' + (t.nameBn ? '<p style="color:var(--text-secondary);font-size:14px;">' + t.nameBn + '</p>' : '') + '<div class="test-price">' + MB.formatPrice(t.price) + '</div><p style="font-size:13px;margin:8px 0;color:var(--text-secondary);line-height:1.5;">' + (t.description || '') + '</p><div class="test-details">' + (t.sampleType ? '<span>Sample: ' + t.sampleType + '</span>' : '') + (t.turnaroundTime ? ' &bull; <span>Report: ' + t.turnaroundTime + '</span>' : '') + '</div>' + (t.preparationRequired ? '<p style="font-size:12px;color:var(--offer-orange);margin-top:8px;">&#9888; ' + (t.preparation || 'Preparation required') + '</p>' : '') + '<button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="bookTest(\\'' + t.id + '\\')">' + MB.t('Book Now', 'এখনই বুক করুন') + '</button></div>').join('') + '</div>';
+    } else { list.innerHTML = '<div class="empty-state"><h3>' + MB.t('No lab tests available', 'কোনো ল্যাব টেস্ট পাওয়া যায়নি') + '</h3></div>'; }
+  }
   document.addEventListener('DOMContentLoaded', async () => {
     const res = await MB.get('/lab-tests');
-    if (res.success && res.data.length > 0) {
-      document.getElementById('lab-tests-list').innerHTML = '<div class="products-grid">' + res.data.map(t => '<div class="card" style="text-align:center;"><h3>' + t.name + '</h3>' + (t.nameBn ? '<p style="color:var(--text-secondary);">' + t.nameBn + '</p>' : '') + '<p style="margin:8px 0;">' + (t.description || '') + '</p><p style="font-size:24px;font-weight:700;color:var(--primary);margin:12px 0;">' + MB.formatPrice(t.price) + '</p><a href="#book-' + t.id + '" class="btn btn-primary" onclick="bookTest(\\'' + t.id + '\\')">Book Now</a></div>').join('') + '</div>';
+    if (res.success) {
+      allTests = res.data;
+      const cats = [...new Set(allTests.map(t => t.category).filter(Boolean))].sort();
+      const sel = document.getElementById('filter-category');
+      cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+      sel.addEventListener('change', () => { const v = sel.value; renderTests(v ? allTests.filter(t => t.category === v) : allTests); });
+      renderTests(allTests);
     } else { document.getElementById('lab-tests-list').innerHTML = '<div class="empty-state"><h3>No lab tests available yet</h3></div>'; }
   });
   async function bookTest(id) {
     if (!MB.isLoggedIn()) { window.location.href = '/login?redirect=/lab-tests'; return; }
-    const name = prompt('Patient Name:');
-    const phone = prompt('Phone Number:');
+    const name = prompt(MB.t('Patient Name:', 'রোগীর নাম:'));
+    const phone = prompt(MB.t('Phone Number:', 'ফোন নম্বর:'));
     if (!name || !phone) return;
     const res = await MB.post('/lab-tests/book', { labTestId: id, patientName: name, phone });
-    if (res.success) MB.toast('Lab test booked successfully!', 'success');
+    if (res.success) MB.toast(MB.t('Lab test booked successfully!', 'ল্যাব টেস্ট বুক হয়েছে!'), 'success');
     else MB.toast(res.message || 'Booking failed', 'error');
   }
 </script>`));
@@ -499,14 +737,25 @@ fs.writeFileSync(path.join(pagesDir, 'pharmacy-registration.html'), wrap('Pharma
 // BLOG
 fs.writeFileSync(path.join(pagesDir, 'blog.html'), wrap('Health Blog', 'স্বাস্থ্য ব্লগ', `
   <section class="section"><div class="container">
-    <h2 class="section-title" data-en="Health Blog" data-bn="স্বাস্থ্য ব্লগ">Health Blog</h2>
+    <div class="section-header"><div>
+      <h2 class="section-title" data-en="Health Blog" data-bn="স্বাস্থ্য ব্লগ">Health Blog</h2>
+      <p class="section-subtitle" data-en="Health tips, medicine guides, and wellness articles" data-bn="স্বাস্থ্য পরামর্শ, ওষুধের গাইড এবং সুস্থতার নিবন্ধ">Health tips, medicine guides, and wellness articles</p>
+    </div></div>
     <div id="blog-list"><div class="loading"><div class="spinner"></div></div></div>
   </div></section>`, `<script>
   document.addEventListener('DOMContentLoaded', async () => {
     const res = await MB.get('/blogs');
     if (res.success && res.data.length > 0) {
-      document.getElementById('blog-list').innerHTML = '<div class="products-grid">' + res.data.map(b => '<div class="card"><h3><a href="/blog/' + b.slug + '">' + b.title + '</a></h3>' + (b.titleBn ? '<p style="color:var(--text-secondary);font-size:14px;">' + b.titleBn + '</p>' : '') + '<p style="margin:8px 0;font-size:14px;color:var(--text-muted);">' + (b.excerpt || '') + '</p><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);"><span>' + MB.formatDate(b.publishedAt || b.createdAt) + '</span><span>' + (b.views || 0) + ' views</span></div></div>').join('') + '</div>';
-    } else { document.getElementById('blog-list').innerHTML = '<div class="empty-state"><h3>No blog posts yet</h3></div>'; }
+      document.getElementById('blog-list').innerHTML = '<div class="products-grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">' +
+        res.data.map(b => '<div class="blog-card"><div class="blog-body">' +
+          (b.category ? '<div class="blog-category">' + b.category + '</div>' : '') +
+          '<h3><a href="/blog/' + b.slug + '">' + b.title + '</a></h3>' +
+          (b.titleBn ? '<p style="color:var(--text-secondary);font-size:14px;margin-bottom:4px;">' + b.titleBn + '</p>' : '') +
+          '<p style="font-size:14px;color:var(--text-muted);margin:8px 0;line-height:1.5;">' + (b.excerpt || '') + '</p>' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:8px;margin-top:8px;"><span>' + (b.author || 'Medicine Bazar') + '</span><span>' + MB.formatDate(b.publishedAt || b.createdAt) + '</span></div>' +
+          (b.tags && b.tags.length > 0 ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + b.tags.slice(0, 3).map(t => '<span style="font-size:11px;background:var(--soft-sky);color:var(--trust-blue);padding:2px 8px;border-radius:12px;">' + t + '</span>').join('') + '</div>' : '') +
+          '</div></div>').join('') + '</div>';
+    } else { document.getElementById('blog-list').innerHTML = '<div class="empty-state"><h3>' + MB.t('No blog posts yet', 'এখনো কোনো ব্লগ পোস্ট নেই') + '</h3></div>'; }
   });
 </script>`));
 
@@ -524,6 +773,62 @@ fs.writeFileSync(path.join(pagesDir, 'blog-detail.html'), wrap('Blog Post', 'ব
       document.getElementById('blog-content').innerHTML = '<a href="/blog" style="font-size:14px;">&larr; Back to Blog</a><h1 style="margin:16px 0 8px;">' + b.title + '</h1>' + (b.titleBn ? '<h2 style="font-size:18px;color:var(--text-secondary);margin-bottom:12px;">' + b.titleBn + '</h2>' : '') + '<p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">By ' + (b.author || 'Medicine Bazar') + ' | ' + MB.formatDate(b.publishedAt || b.createdAt) + '</p><div class="card" style="line-height:1.8;">' + (b.content || '') + '</div>';
     } else { document.getElementById('blog-content').innerHTML = '<div class="empty-state"><h3>Blog post not found</h3><a href="/blog" class="btn btn-primary">Back to Blog</a></div>'; }
   });
+</script>`));
+
+// DOCTOR CONSULTATION PAGE
+fs.writeFileSync(path.join(pagesDir, 'doctor-consultation.html'), wrap('Doctor Consultation', 'ডাক্তার পরামর্শ', `
+  <section class="section"><div class="container">
+    <div class="section-header"><div>
+      <h2 class="section-title" data-en="Doctor Consultation" data-bn="ডাক্তার পরামর্শ">Doctor Consultation</h2>
+      <p class="section-subtitle" data-en="Get professional medical advice from certified doctors" data-bn="প্রত্যয়িত ডাক্তারদের কাছ থেকে পেশাদার চিকিৎসা পরামর্শ পান">Get professional medical advice from certified doctors</p>
+    </div></div>
+    <div class="alert alert-info" style="margin-bottom:24px;">
+      <strong data-en="Coming Soon!" data-bn="শীঘ্রই আসছে!">Coming Soon!</strong>
+      <span data-en="Our doctor consultation service is currently under development. Stay tuned for video/chat consultations." data-bn="আমাদের ডাক্তার পরামর্শ সেবা বর্তমানে ডেভেলপমেন্টে আছে। ভিডিও/চ্যাট পরামর্শের জন্য অপেক্ষা করুন।">Our doctor consultation service is currently under development. Stay tuned for video/chat consultations.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#129657;</div>
+        <h3 data-en="General Consultation" data-bn="সাধারণ পরামর্শ">General Consultation</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Talk to a general physician about your health concerns" data-bn="আপনার স্বাস্থ্য সমস্যা নিয়ে একজন সাধারণ চিকিৎসকের সাথে কথা বলুন">Talk to a general physician about your health concerns</p>
+        <button class="btn btn-outline btn-block" disabled data-en="Coming Soon" data-bn="শীঘ্রই আসছে">Coming Soon</button>
+      </div>
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128138;</div>
+        <h3 data-en="Pharmacy Advice" data-bn="ফার্মেসি পরামর্শ">Pharmacy Advice</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Get medicine guidance from licensed pharmacists" data-bn="লাইসেন্সপ্রাপ্ত ফার্মাসিস্টদের কাছ থেকে ওষুধ সংক্রান্ত পরামর্শ নিন">Get medicine guidance from licensed pharmacists</p>
+        <a href="https://wa.me/8801602444532" class="btn btn-primary btn-block" data-en="Chat via WhatsApp" data-bn="হোয়াটসঅ্যাপে চ্যাট করুন">Chat via WhatsApp</a>
+      </div>
+      <div class="card" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128203;</div>
+        <h3 data-en="Request Appointment" data-bn="অ্যাপয়েন্টমেন্ট অনুরোধ">Request Appointment</h3>
+        <p style="color:var(--text-muted);margin:12px 0;" data-en="Schedule a future consultation with a specialist" data-bn="একজন বিশেষজ্ঞের সাথে ভবিষ্যত পরামর্শের সময় নির্ধারণ করুন">Schedule a future consultation with a specialist</p>
+        <button class="btn btn-outline btn-block" disabled data-en="Coming Soon" data-bn="শীঘ্রই আসছে">Coming Soon</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:32px;">
+      <h3 style="margin-bottom:16px;" data-en="Quick Consultation Request" data-bn="দ্রুত পরামর্শ অনুরোধ">Quick Consultation Request</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label data-en="Your Name" data-bn="আপনার নাম">Your Name</label><input type="text" id="doc-name" class="form-control"></div>
+        <div class="form-group"><label data-en="Phone" data-bn="ফোন">Phone</label><input type="tel" id="doc-phone" class="form-control"></div>
+        <div class="form-group" style="grid-column:span 2;"><label data-en="Describe your concern" data-bn="আপনার সমস্যা বর্ণনা করুন">Describe your concern</label><textarea id="doc-concern" class="form-control" rows="4"></textarea></div>
+      </div>
+      <button class="btn btn-primary" onclick="submitConsultation()" data-en="Submit Request" data-bn="অনুরোধ জমা দিন">Submit Request</button>
+    </div>
+    <div class="alert" style="margin-top:24px;background:var(--soft-sky);border:1px solid var(--trust-blue);color:var(--text);">
+      <strong>Medical Disclaimer:</strong> This is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or qualified health provider.
+    </div>
+  </div></section>`, `<script>
+  async function submitConsultation() {
+    const name = document.getElementById('doc-name').value;
+    const phone = document.getElementById('doc-phone').value;
+    const concern = document.getElementById('doc-concern').value;
+    if (!name || !phone || !concern) { MB.toast('Please fill all fields', 'error'); return; }
+    MB.toast('Consultation request submitted! We will contact you soon.', 'success');
+    document.getElementById('doc-name').value = '';
+    document.getElementById('doc-phone').value = '';
+    document.getElementById('doc-concern').value = '';
+  }
 </script>`));
 
 // STATIC PAGES

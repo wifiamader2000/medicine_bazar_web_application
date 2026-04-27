@@ -1,5 +1,6 @@
 /* Admin Panel JS */
 (function() {
+  MB.loadUser();
   if (!MB.isLoggedIn() || !MB.isStaff()) {
     window.location.href = '/login?redirect=/admin';
     return;
@@ -47,6 +48,13 @@ async function loadSection(section) {
       case 'reports-sales': title.textContent = 'Sales Report'; await loadSalesReport(content); break;
       case 'reports-stock': title.textContent = 'Stock Report'; await loadStockReport(content); break;
       case 'reports-expiry': title.textContent = 'Expiry Report'; await loadExpiryReport(content); break;
+      case 'notifications': title.textContent = 'Notifications'; await loadNotifications(content); break;
+      case 'suppliers': title.textContent = 'Suppliers'; await loadSuppliers(content); break;
+      case 'purchase-orders': title.textContent = 'Purchase Orders'; await loadPurchaseOrders(content); break;
+      case 'reports-payments': title.textContent = 'Payment Report'; await loadPaymentReport(content); break;
+      case 'reports-customers': title.textContent = 'Customer Report'; await loadCustomerReport(content); break;
+      case 'loyalty': title.textContent = 'Loyalty Program'; await loadLoyalty(content); break;
+      case 'inventory-forecast': title.textContent = 'Inventory Forecast'; await loadInventoryForecast(content); break;
       default: title.textContent = section; content.innerHTML = '<div class="empty-state"><h3>Section not found</h3></div>';
     }
   } catch (err) {
@@ -77,7 +85,14 @@ async function loadDashboard(el) {
       <div class="chart-card"><h3>Sales Overview</h3><div class="chart-placeholder">Online: ${MB.formatPrice(d.onlineSalesTotal)} | POS: ${MB.formatPrice(d.posSalesTotal)}</div></div>
       <div class="chart-card"><h3>Stock Status</h3><div class="chart-placeholder">Sold: ${d.soldPercentage}% | Remaining: ${d.remainingStockPercentage}%</div></div>
     </div>
-    ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => `<tr><td>${p.name}</td><td style="color:var(--alert-red);font-weight:700;">${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+      ${d.categoryBreakdown && d.categoryBreakdown.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Products by Category</h3><div class="table-wrap"><table><thead><tr><th>Category</th><th>Count</th><th>%</th></tr></thead><tbody>' + d.categoryBreakdown.map(c => '<tr><td>' + c.name + '</td><td><strong>' + c.count + '</strong></td><td>' + ((c.count / (d.activeProducts || d.totalProducts || 1)) * 100).toFixed(1) + '%</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+      ${d.topProducts && d.topProducts.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Top Selling Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Sold</th><th>Stock</th></tr></thead><tbody>' + d.topProducts.map(p => '<tr><td>' + p.name + (p.strength ? ' ' + p.strength : '') + '</td><td><strong>' + p.sold + '</strong></td><td>' + p.stock + '</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+      ${d.topManufacturers && d.topManufacturers.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Top Manufacturers</h3><div class="table-wrap"><table><thead><tr><th>Manufacturer</th><th>Products</th></tr></thead><tbody>' + d.topManufacturers.map(m => '<tr><td>' + m.name + '</td><td><strong>' + m.count + '</strong></td></tr>').join('') + '</tbody></table></div></div>' : ''}
+      ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => '<tr><td>' + p.name + '</td><td style="color:var(--alert-red);font-weight:700;">' + p.stock + '</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+    </div>`;
 
   // Update sidebar badges
   const pendingOrdersBadge = document.getElementById('pending-orders-count');
@@ -304,20 +319,52 @@ async function uploadMedia() {
 
 async function loadCoupons(el) {
   const res = await MB.get('/admin/coupons');
-  el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="promptAddCoupon()">+ Add Coupon</button>
-    <div class="table-wrap"><table><thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Used</th><th>Status</th></tr></thead><tbody>
-    ${(res.data || []).map(c => `<tr><td><strong>${c.code}</strong></td><td>${c.type || 'fixed'}</td><td>${c.value}</td><td>${MB.formatPrice(c.minOrderAmount || 0)}</td><td>${c.usedCount || 0}/${c.usageLimit || '∞'}</td><td>${c.active ? 'Active' : 'Inactive'}</td></tr>`).join('')}
+  el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="showCouponForm()">+ Add Coupon</button>
+    <div id="coupon-form" style="display:none;" class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:12px;">Add Coupon</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Code</label><input type="text" id="cp-code" class="form-control" placeholder="SAVE10"></div>
+        <div class="form-group"><label>Type</label><select id="cp-type" class="form-control"><option value="fixed">Fixed (৳)</option><option value="percentage">Percentage (%)</option></select></div>
+        <div class="form-group"><label>Value</label><input type="number" id="cp-value" class="form-control" placeholder="100"></div>
+        <div class="form-group"><label>Min Order (৳)</label><input type="number" id="cp-min" class="form-control" placeholder="500"></div>
+        <div class="form-group"><label>Max Discount (৳)</label><input type="number" id="cp-max" class="form-control" placeholder="200"></div>
+        <div class="form-group"><label>Usage Limit</label><input type="number" id="cp-limit" class="form-control" placeholder="100"></div>
+        <div class="form-group"><label>Start Date</label><input type="date" id="cp-start" class="form-control"></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="cp-end" class="form-control"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveCoupon()">Save Coupon</button>
+      <button class="btn btn-outline" onclick="document.getElementById('coupon-form').style.display='none'">Cancel</button>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Max Disc.</th><th>Used</th><th>Dates</th><th>Status</th><th>Action</th></tr></thead><tbody>
+    ${(res.data || []).map(c => `<tr>
+      <td><strong>${c.code}</strong></td><td>${c.type === 'percentage' ? 'Percentage' : 'Fixed'}</td>
+      <td>${c.type === 'percentage' ? c.value + '%' : MB.formatPrice(c.value)}</td>
+      <td>${MB.formatPrice(c.minOrderAmount || 0)}</td><td>${c.maxDiscount ? MB.formatPrice(c.maxDiscount) : '-'}</td>
+      <td>${c.usedCount || 0}/${c.usageLimit || '∞'}</td>
+      <td style="font-size:12px;">${c.startDate || '-'} to ${c.endDate || '-'}</td>
+      <td>${c.active ? '<span style="color:var(--primary);">Active</span>' : '<span style="color:var(--alert-red);">Inactive</span>'}</td>
+      <td><button class="btn btn-sm btn-outline" onclick="toggleCoupon('${c.id}',${!c.active})">${c.active ? 'Disable' : 'Enable'}</button></td>
+    </tr>`).join('')}
     </tbody></table></div>`;
 }
-
-async function promptAddCoupon() {
-  const code = prompt('Coupon code:');
-  if (!code) return;
-  const type = prompt('Type (percentage or fixed):') || 'fixed';
-  const value = parseFloat(prompt('Value:') || '0');
-  await MB.post('/admin/coupons', { code, type, value });
-  MB.toast('Coupon added', 'success');
-  loadSection('coupons');
+function showCouponForm() { document.getElementById('coupon-form').style.display = 'block'; }
+async function saveCoupon() {
+  const data = {
+    code: document.getElementById('cp-code').value, type: document.getElementById('cp-type').value,
+    value: parseFloat(document.getElementById('cp-value').value) || 0,
+    minOrderAmount: parseFloat(document.getElementById('cp-min').value) || 0,
+    maxDiscount: parseFloat(document.getElementById('cp-max').value) || null,
+    usageLimit: parseInt(document.getElementById('cp-limit').value) || null,
+    startDate: document.getElementById('cp-start').value || null,
+    endDate: document.getElementById('cp-end').value || null,
+  };
+  if (!data.code || !data.value) { MB.toast('Code and value required', 'error'); return; }
+  await MB.post('/admin/coupons', data);
+  MB.toast('Coupon created', 'success'); loadSection('coupons');
+}
+async function toggleCoupon(id, active) {
+  await MB.put('/admin/coupons/' + id, { active });
+  MB.toast('Coupon updated', 'success'); loadSection('coupons');
 }
 
 async function loadBlogs(el) {
@@ -368,7 +415,7 @@ async function loadPOS(el) {
   el.innerHTML = `
     <div class="pos-layout">
       <div class="pos-products">
-        <div class="search-bar" style="margin-bottom:16px;"><input type="text" id="pos-search" placeholder="Search product..." class="form-control"><button class="btn btn-primary btn-sm" style="position:absolute;right:4px;top:4px;" onclick="posSearch()">Search</button></div>
+        <div class="search-bar" style="margin-bottom:16px;"><input type="text" id="pos-search" placeholder="Search by name, generic, barcode..." class="form-control" oninput="debouncePosSearch()" onkeydown="if(event.key==='Enter')posSearch()"><button class="btn btn-primary btn-sm" style="position:absolute;right:4px;top:4px;" onclick="posSearch()">Search</button></div>
         <div id="pos-results"></div>
       </div>
       <div class="pos-bill">
@@ -398,16 +445,26 @@ async function openPosSession() {
   if (res.success) { MB.toast('POS session opened', 'success'); loadSection('pos'); }
 }
 
+let posSearchTimer;
+function debouncePosSearch() {
+  clearTimeout(posSearchTimer);
+  posSearchTimer = setTimeout(posSearch, 250);
+}
+
 async function posSearch() {
-  const q = document.getElementById('pos-search').value;
-  if (!q) return;
+  const q = document.getElementById('pos-search').value.trim();
+  if (!q) { document.getElementById('pos-results').innerHTML = ''; return; }
   const res = await MB.get('/search/suggestions?q=' + encodeURIComponent(q) + '&limit=20');
   if (res.success) {
+    if (res.data.length === 0) {
+      document.getElementById('pos-results').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No products found for "' + q.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + '"</p>';
+      return;
+    }
     document.getElementById('pos-results').innerHTML = res.data.map(p => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="addToPosBill('${p.id}','${p.name.replace(/'/g, "\\'")}',${p.sellingPrice || p.mrp || 0})">
-        <img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" style="width:40px;height:40px;object-fit:contain;">
-        <div style="flex:1;"><strong>${p.name} ${p.strength || ''}</strong><br><small>${p.genericName || ''}</small></div>
-        <div style="font-weight:700;color:var(--primary);">${MB.formatPrice(p.sellingPrice || p.mrp)}</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''" onclick="addToPosBill('${p.id}','${p.name.replace(/'/g, "\\'")}',${p.sellingPrice || p.mrp || 0})">
+        <img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;">
+        <div style="flex:1;"><strong>${p.name} ${p.strength || ''}</strong><br><small style="color:var(--text-muted);">${p.genericName || ''} ${p.manufacturer ? '&bull; ' + p.manufacturer : ''}</small></div>
+        <div style="text-align:right;"><div style="font-weight:700;color:var(--primary);">${MB.formatPrice(p.sellingPrice || p.mrp)}</div><small style="color:var(--text-muted);">Stock: ${p.stockQuantity || 0}</small></div>
       </div>`).join('');
   }
 }
@@ -440,9 +497,43 @@ async function completeSale(method) {
   const res = await MB.post('/pos/sale', { items: posBillItems, paymentMethod: method, customerPhone: phone, discount });
   if (res.success) {
     MB.toast(`Sale complete! Invoice: ${res.data.invoiceNumber}`, 'success');
+    showReceipt(res.data, posBillItems, discount, method, phone);
     posBillItems = [];
     renderPosBill();
   } else { MB.toast(res.message || 'Sale failed', 'error'); }
+}
+
+function showReceipt(sale, items, discount, method, phone) {
+  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const total = subtotal - discount;
+  const now = new Date();
+  const receiptHtml = `<!DOCTYPE html><html><head><title>Receipt - ${sale.invoiceNumber}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Courier New',monospace;width:300px;padding:12px;font-size:12px;}
+    .center{text-align:center;}.line{border-top:1px dashed #000;margin:6px 0;}.bold{font-weight:700;}
+    table{width:100%;border-collapse:collapse;}td{padding:2px 0;font-size:11px;}
+    .right{text-align:right;}.total-row{font-size:14px;font-weight:700;border-top:2px solid #000;padding-top:4px;}
+    @media print{body{width:80mm;}}</style></head><body>
+    <div class="center"><h2 style="font-size:16px;">Medicine Bazar</h2><p>Your Trusted Pharmacy</p><p>Phone: 01602444532</p></div>
+    <div class="line"></div>
+    <p><span class="bold">Invoice:</span> ${sale.invoiceNumber}</p>
+    <p><span class="bold">Date:</span> ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</p>
+    <p><span class="bold">Cashier:</span> ${MB.user?.name || 'Staff'}</p>
+    ${phone ? '<p><span class="bold">Customer:</span> ' + phone + '</p>' : ''}
+    <div class="line"></div>
+    <table>${items.map(i => '<tr><td>' + i.name + '</td><td class="right">' + i.quantity + 'x</td><td class="right">' + (i.price * i.quantity).toFixed(2) + '</td></tr>').join('')}</table>
+    <div class="line"></div>
+    <table><tr><td>Subtotal</td><td class="right">${subtotal.toFixed(2)}</td></tr>
+    ${discount > 0 ? '<tr><td>Discount</td><td class="right">-' + discount.toFixed(2) + '</td></tr>' : ''}
+    <tr class="total-row"><td>TOTAL</td><td class="right">${total.toFixed(2)}</td></tr></table>
+    <p style="margin-top:4px;"><span class="bold">Payment:</span> ${method.toUpperCase()}</p>
+    <div class="line"></div>
+    <div class="center" style="margin-top:8px;"><p>Thank you for your purchase!</p><p style="font-size:10px;">Return policy: 7 days for damaged items</p></div>
+  </body></html>`;
+  const w = window.open('', 'receipt', 'width=340,height=600');
+  if (!w) { MB.toast('Please allow popups to print receipt', 'error'); return; }
+  w.document.write(receiptHtml);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
 }
 
 function clearPosBill() { posBillItems = []; renderPosBill(); }
@@ -502,4 +593,223 @@ async function loadExpiryReport(el) {
     </div>
     ${d.expired.length > 0 ? '<div class="card" style="margin-top:16px;"><h3 style="color:var(--alert-red);">Expired Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>Stock</th></tr></thead><tbody>' + d.expired.map(p => `<tr><td>${p.name}</td><td>${p.batch || ''}</td><td>${p.expiryDate}</td><td>${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}
     ${d.expiringSoon.length > 0 ? '<div class="card" style="margin-top:16px;"><h3 style="color:var(--offer-orange);">Expiring Soon (within 3 months)</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>Stock</th></tr></thead><tbody>' + d.expiringSoon.map(p => `<tr><td>${p.name}</td><td>${p.batch || ''}</td><td>${p.expiryDate}</td><td>${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
+}
+
+// Notification Center
+async function loadNotifications(el) {
+  const res = await MB.get('/notifications');
+  if (!res.success) { el.innerHTML = '<div class="alert alert-error">Failed to load notifications</div>'; return; }
+  const n = res.data;
+  el.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card red"><div class="label">High Priority</div><div class="value">${res.summary.high}</div></div>
+      <div class="stat-card orange"><div class="label">Medium Priority</div><div class="value">${res.summary.medium}</div></div>
+      <div class="stat-card"><div class="label">Total Alerts</div><div class="value">${res.summary.total}</div></div>
+    </div>
+    ${n.length === 0 ? '<div class="empty-state"><h3>No alerts</h3><p>Everything looks good!</p></div>' :
+    n.map(a => `<div class="card" style="margin-bottom:12px;border-left:4px solid ${a.severity === 'high' ? 'var(--alert-red)' : a.severity === 'medium' ? 'var(--offer-orange)' : 'var(--primary)'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;">${a.title}</h3>
+        <span class="badge" style="background:${a.severity === 'high' ? 'var(--alert-red)' : 'var(--offer-orange)'};color:#fff;padding:4px 10px;border-radius:12px;font-size:12px;">${a.severity}</span>
+      </div>
+      ${a.titleBn ? '<p style="color:var(--text-muted);font-size:14px;margin:4px 0;">' + a.titleBn + '</p>' : ''}
+      ${a.items ? '<div class="table-wrap" style="margin-top:8px;"><table><tbody>' + a.items.slice(0, 5).map(i => '<tr><td>' + i.name + '</td><td>' + (i.stock !== undefined ? 'Stock: ' + i.stock : (i.expiryDate || '')) + '</td></tr>').join('') + '</tbody></table></div>' : ''}
+    </div>`).join('')}`;
+}
+
+// Supplier Management
+async function loadSuppliers(el) {
+  const res = await MB.get('/suppliers');
+  el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="showSupplierForm()">+ Add Supplier</button>
+    <div id="supplier-form" style="display:none;" class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:12px;">Add Supplier</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Company Name</label><input type="text" id="sup-name" class="form-control"></div>
+        <div class="form-group"><label>Contact Person</label><input type="text" id="sup-contact" class="form-control"></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="sup-phone" class="form-control"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="sup-email" class="form-control"></div>
+        <div class="form-group" style="grid-column:span 2;"><label>Address</label><input type="text" id="sup-address" class="form-control"></div>
+        <div class="form-group"><label>License Number</label><input type="text" id="sup-license" class="form-control"></div>
+        <div class="form-group"><label>Payment Terms</label><input type="text" id="sup-terms" class="form-control" placeholder="Net 30 days"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSupplier()">Save</button>
+      <button class="btn btn-outline" onclick="document.getElementById('supplier-form').style.display='none'">Cancel</button>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Company</th><th>Contact</th><th>Phone</th><th>Email</th><th>License</th><th>Status</th></tr></thead><tbody>
+    ${(res.data || []).map(s => `<tr><td><strong>${s.name}</strong></td><td>${s.contactPerson || ''}</td><td>${s.phone || ''}</td><td>${s.email || ''}</td><td>${s.licenseNumber || '-'}</td><td>${s.active !== false ? 'Active' : 'Inactive'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function showSupplierForm() { document.getElementById('supplier-form').style.display = 'block'; }
+async function saveSupplier() {
+  const data = {
+    name: document.getElementById('sup-name').value, contactPerson: document.getElementById('sup-contact').value,
+    phone: document.getElementById('sup-phone').value, email: document.getElementById('sup-email').value,
+    address: document.getElementById('sup-address').value, licenseNumber: document.getElementById('sup-license').value,
+    paymentTerms: document.getElementById('sup-terms').value,
+  };
+  if (!data.name) { MB.toast('Company name required', 'error'); return; }
+  await MB.post('/suppliers', data);
+  MB.toast('Supplier added', 'success'); loadSection('suppliers');
+}
+
+// Purchase Orders
+async function loadPurchaseOrders(el) {
+  const [poRes, supRes, sugRes] = await Promise.all([
+    MB.get('/suppliers/purchase-orders'), MB.get('/suppliers'), MB.get('/suppliers/reorder-suggestions'),
+  ]);
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <button class="btn btn-primary" onclick="showPOForm()">+ Create Purchase Order</button>
+    </div>
+    <div id="po-form" style="display:none;" class="card" style="margin-bottom:16px;">
+      <h3>New Purchase Order</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Supplier</label><select id="po-supplier" class="form-control">
+          <option value="">Select Supplier</option>
+          ${(supRes.data || []).map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('')}
+        </select></div>
+        <div class="form-group"><label>Expected Delivery</label><input type="date" id="po-delivery" class="form-control"></div>
+      </div>
+      <h4 style="margin:12px 0 8px;">Items</h4>
+      <div id="po-items-list"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px;">
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Product Name</label><input type="text" id="po-item-name" class="form-control" placeholder="Medicine name"></div>
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Qty</label><input type="number" id="po-item-qty" class="form-control" value="1" min="1"></div>
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Unit Cost (৳)</label><input type="number" id="po-item-cost" class="form-control" value="0" step="0.01"></div>
+        <button class="btn btn-outline btn-sm" onclick="addPOItem()">Add</button>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="po-notes" class="form-control" rows="2"></textarea></div>
+      <button class="btn btn-primary" onclick="savePO()">Create PO</button>
+      <button class="btn btn-outline" onclick="document.getElementById('po-form').style.display='none'">Cancel</button>
+    </div>
+    <h3 style="margin-bottom:12px;">Purchase Orders</h3>
+    <div class="table-wrap"><table><thead><tr><th>PO #</th><th>Supplier</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>
+    ${(poRes.data || []).map(p => `<tr><td><strong>${p.poNumber}</strong></td><td>${p.supplierName}</td><td>${MB.formatPrice(p.total)}</td><td>${p.status}</td><td>${MB.formatDate(p.createdAt)}</td><td><select onchange="updatePOStatus('${p.id}',this.value)" class="form-control" style="width:120px;"><option value="">Action</option><option value="approved">Approve</option><option value="ordered">Mark Ordered</option><option value="received">Received</option><option value="cancelled">Cancel</option></select></td></tr>`).join('')}
+    </tbody></table></div>
+    ${(sugRes.data || []).length > 0 ? '<h3 style="margin-top:24px;margin-bottom:12px;">Reorder Suggestions</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Current Stock</th><th>Reorder Level</th><th>Suggested Qty</th></tr></thead><tbody>' + sugRes.data.slice(0, 20).map(s => '<tr><td>' + s.name + '</td><td style="color:var(--alert-red);font-weight:700;">' + s.currentStock + '</td><td>' + s.reorderLevel + '</td><td>' + s.suggestedQuantity + '</td></tr>').join('') + '</tbody></table></div>' : ''}`;
+}
+let poItems = [];
+function showPOForm() { poItems = []; renderPOItems(); document.getElementById('po-form').style.display = 'block'; }
+function addPOItem() {
+  const name = document.getElementById('po-item-name').value.trim();
+  const quantity = parseInt(document.getElementById('po-item-qty').value) || 1;
+  const unitCost = parseFloat(document.getElementById('po-item-cost').value) || 0;
+  if (!name) { MB.toast('Enter product name', 'error'); return; }
+  poItems.push({ name, quantity, unitCost });
+  document.getElementById('po-item-name').value = '';
+  document.getElementById('po-item-qty').value = '1';
+  document.getElementById('po-item-cost').value = '0';
+  renderPOItems();
+}
+function renderPOItems() {
+  const el = document.getElementById('po-items-list');
+  if (!el) return;
+  if (poItems.length === 0) { el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">No items added yet</p>'; return; }
+  const total = poItems.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+  el.innerHTML = '<div class="table-wrap" style="margin-bottom:8px;"><table><thead><tr><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th></th></tr></thead><tbody>' +
+    poItems.map((item, i) => '<tr><td>' + item.name + '</td><td>' + item.quantity + '</td><td>' + MB.formatPrice(item.unitCost) + '</td><td>' + MB.formatPrice(item.quantity * item.unitCost) + '</td><td><span style="cursor:pointer;color:var(--alert-red);" onclick="poItems.splice(' + i + ',1);renderPOItems();">&#10005;</span></td></tr>').join('') +
+    '</tbody></table></div><p style="font-weight:700;margin-bottom:8px;">Total: ' + MB.formatPrice(total) + '</p>';
+}
+async function savePO() {
+  const supplierId = document.getElementById('po-supplier').value;
+  if (!supplierId) { MB.toast('Select a supplier', 'error'); return; }
+  if (poItems.length === 0) { MB.toast('Add at least one item', 'error'); return; }
+  try {
+    await MB.post('/suppliers/purchase-orders', {
+      supplierId, items: poItems, notes: document.getElementById('po-notes').value,
+      expectedDelivery: document.getElementById('po-delivery').value,
+    });
+    MB.toast('Purchase order created', 'success'); loadSection('purchase-orders');
+  } catch (err) { MB.toast(err.message || 'Failed to create PO', 'error'); }
+}
+async function updatePOStatus(id, status) {
+  if (!status) return;
+  await MB.put('/suppliers/purchase-orders/' + id + '/status', { status });
+  MB.toast('PO updated', 'success'); loadSection('purchase-orders');
+}
+
+// Payment Report
+async function loadPaymentReport(el) {
+  const res = await MB.get('/reports/payments');
+  if (!res.success) return;
+  const d = res.data;
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card orange"><div class="label">Pending Verification</div><div class="value">${d.pendingVerification}</div></div>
+      <div class="stat-card"><div class="label">Pending Amount</div><div class="value">${MB.formatPrice(d.pendingAmount)}</div></div>
+    </div>
+    <div class="card" style="margin-top:16px;"><h3>Payment Methods</h3>
+    <div class="table-wrap"><table><thead><tr><th>Method</th><th>Orders</th><th>Total</th></tr></thead><tbody>
+    ${(d.byMethod || []).map(m => `<tr><td><strong>${m.method}</strong></td><td>${m.count}</td><td>${MB.formatPrice(m.total)}</td></tr>`).join('')}
+    </tbody></table></div></div>
+    <div style="margin-top:12px;"><a href="/api/v1/reports/export/orders" class="btn btn-outline btn-sm" target="_blank">Export Orders CSV</a></div>`;
+}
+
+// Customer Report
+async function loadCustomerReport(el) {
+  const res = await MB.get('/reports/customers');
+  if (!res.success) return;
+  const d = res.data || [];
+  el.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="label">Total Customers</div><div class="value">${d.length}</div></div>
+      <div class="stat-card"><div class="label">Total Revenue</div><div class="value">${MB.formatPrice(d.reduce((s, c) => s + c.totalSpent, 0))}</div></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Total Spent</th><th>Last Order</th><th>Joined</th></tr></thead><tbody>
+    ${d.sort((a, b) => b.totalSpent - a.totalSpent).map(c => `<tr><td>${c.name}</td><td>${c.email}</td><td>${c.phone || '-'}</td><td>${c.orderCount}</td><td>${MB.formatPrice(c.totalSpent)}</td><td>${c.lastOrder ? MB.formatDate(c.lastOrder) : '-'}</td><td>${MB.formatDate(c.joinedAt)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div style="margin-top:12px;"><a href="/api/v1/reports/export/customers" class="btn btn-outline btn-sm" target="_blank">Export Customers CSV</a></div>`;
+}
+
+// Loyalty Program
+async function loadLoyalty(el) {
+  const res = await MB.get('/admin/loyalty-config');
+  const cfg = res.data || {};
+  el.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="label">Points per ৳1</div><div class="value">${cfg.pointsPerTaka || 1}</div></div>
+      <div class="stat-card teal"><div class="label">Redeem Rate</div><div class="value">${(cfg.redeemRate || 0.1)} ৳/pt</div></div>
+      <div class="stat-card blue"><div class="label">Min Redeem</div><div class="value">${cfg.minRedeemPoints || 100} pts</div></div>
+      <div class="stat-card"><div class="label">Status</div><div class="value">${cfg.enabled !== false ? 'Active' : 'Disabled'}</div></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:16px;">Configure Loyalty Program</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Points per ৳1 spent</label><input type="number" id="loy-per-taka" class="form-control" value="${cfg.pointsPerTaka || 1}"></div>
+        <div class="form-group"><label>Redeem rate (৳ per point)</label><input type="number" id="loy-redeem" class="form-control" step="0.01" value="${cfg.redeemRate || 0.1}"></div>
+        <div class="form-group"><label>Min redeem points</label><input type="number" id="loy-min" class="form-control" value="${cfg.minRedeemPoints || 100}"></div>
+        <div class="form-group"><label>Welcome bonus points</label><input type="number" id="loy-welcome" class="form-control" value="${cfg.welcomeBonus || 50}"></div>
+        <div class="form-group"><label>Referral bonus</label><input type="number" id="loy-referral" class="form-control" value="${cfg.referralBonus || 100}"></div>
+        <div class="form-group"><label>Birthday bonus</label><input type="number" id="loy-birthday" class="form-control" value="${cfg.birthdayBonus || 200}"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveLoyaltyConfig()">Save Configuration</button>
+    </div>`;
+}
+async function saveLoyaltyConfig() {
+  const data = {
+    enabled: true,
+    pointsPerTaka: parseFloat(document.getElementById('loy-per-taka').value) || 1,
+    redeemRate: parseFloat(document.getElementById('loy-redeem').value) || 0.1,
+    minRedeemPoints: parseInt(document.getElementById('loy-min').value) || 100,
+    welcomeBonus: parseInt(document.getElementById('loy-welcome').value) || 50,
+    referralBonus: parseInt(document.getElementById('loy-referral').value) || 100,
+    birthdayBonus: parseInt(document.getElementById('loy-birthday').value) || 200,
+  };
+  await MB.put('/admin/loyalty-config', data);
+  MB.toast('Loyalty config saved', 'success');
+}
+
+// Inventory Forecast
+async function loadInventoryForecast(el) {
+  const res = await MB.get('/suppliers/reorder-suggestions');
+  const products = res.data || [];
+  el.innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:16px;">Inventory forecast is based on sales velocity and current stock levels. More accurate predictions will be available with more sales data.</div>
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card red"><div class="label">Need Reorder</div><div class="value">${products.length}</div></div>
+      <div class="stat-card orange"><div class="label">Critical (0 stock)</div><div class="value">${products.filter(p => p.currentStock === 0).length}</div></div>
+    </div>
+    ${products.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Reorder Recommendations</h3><div class="table-wrap"><table><thead><tr><th>Medicine</th><th>Generic</th><th>Current Stock</th><th>Reorder Level</th><th>Avg Sales</th><th>Suggested Order</th><th>Status</th></tr></thead><tbody>' +
+    products.map(p => '<tr><td><strong>' + p.name + '</strong></td><td>' + (p.genericName || '-') + '</td><td style="color:' + (p.currentStock === 0 ? 'var(--alert-red)' : p.currentStock <= 5 ? 'var(--offer-orange)' : 'var(--text)') + ';font-weight:700;">' + p.currentStock + '</td><td>' + p.reorderLevel + '</td><td>' + p.avgMonthlySales + '</td><td>' + p.suggestedQuantity + '</td><td>' + (p.currentStock === 0 ? '<span style="color:var(--alert-red);font-weight:700;">OUT OF STOCK</span>' : '<span style="color:var(--offer-orange);">Low</span>') + '</td></tr>').join('') +
+    '</tbody></table></div></div>' : '<div class="empty-state"><h3>All products are well stocked</h3></div>'}`;
 }

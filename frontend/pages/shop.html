@@ -20,16 +20,24 @@
   </header>
   
   <section class="section"><div class="container">
-    <div class="section-header"><h2 class="section-title" data-en="All Medicines" data-bn="সকল ওষুধ">All Medicines</h2></div>
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="filter-category" class="form-control" style="max-width:200px;"><option value="">All Categories</option></select>
-      <select id="filter-sort" class="form-control" style="max-width:200px;"><option value="">Sort By</option><option value="name:asc">Name A-Z</option><option value="name:desc">Name Z-A</option><option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option></select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:14px;"><input type="checkbox" id="filter-stock"> In Stock Only</label>
+    <div class="section-header"><div><h2 class="section-title" data-en="All Medicines" data-bn="সকল ওষুধ">All Medicines</h2><p class="section-subtitle" id="result-count" style="color:var(--text-muted);"></p></div></div>
+    <div class="shop-filters" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <select id="filter-category" class="form-control" style="max-width:180px;"><option value="" data-en="All Categories" data-bn="সকল ক্যাটাগরি">All Categories</option></select>
+      <select id="filter-brand" class="form-control" style="max-width:180px;"><option value="" data-en="All Brands" data-bn="সকল ব্র্যান্ড">All Brands</option></select>
+      <select id="filter-form" class="form-control" style="max-width:160px;"><option value="">All Forms</option></select>
+      <select id="filter-sort" class="form-control" style="max-width:180px;">
+        <option value="">Sort By</option><option value="name:asc">Name A-Z</option><option value="name:desc">Name Z-A</option>
+        <option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option>
+        <option value="soldCount:desc">Best Selling</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;"><input type="checkbox" id="filter-stock"> <span data-en="In Stock" data-bn="স্টকে আছে">In Stock</span></label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;"><input type="checkbox" id="filter-rx"> <span data-en="Rx Only" data-bn="প্রেসক্রিপশন">Rx Only</span></label>
+      <button id="clear-filters" class="btn btn-outline btn-sm" style="display:none;" data-en="Clear Filters" data-bn="ফিল্টার মুছুন">Clear Filters</button>
     </div>
     <div id="products-grid" class="products-grid"><div class="loading"><div class="spinner"></div></div></div>
     <div id="pagination" class="pagination"></div>
   </div></section>
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   <script>
@@ -37,27 +45,46 @@
   async function loadProducts(page = 1) {
     currentPage = page;
     const cat = document.getElementById('filter-category').value;
+    const brand = document.getElementById('filter-brand').value;
     const sort = document.getElementById('filter-sort').value;
     const inStock = document.getElementById('filter-stock').checked;
-    let url = '/products?page=' + page + '&limit=20';
+    const rx = document.getElementById('filter-rx').checked;
+    let url = '/products?page=' + page + '&limit=24';
     if (cat) url += '&category=' + encodeURIComponent(cat);
+    if (brand) url += '&brand=' + encodeURIComponent(brand);
     if (sort) url += '&sort=' + sort;
     if (inStock) url += '&inStock=true';
+    if (rx) url += '&prescriptionRequired=true';
+    const hasFilter = cat || brand || sort || inStock || rx;
+    document.getElementById('clear-filters').style.display = hasFilter ? '' : 'none';
     const res = await MB.get(url);
     if (res.success) {
-      document.getElementById('products-grid').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No products found</h3></div>';
+      document.getElementById('result-count').textContent = res.pagination.total + ' ' + MB.t('medicines found', 'টি ওষুধ পাওয়া গেছে');
+      document.getElementById('products-grid').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>' + MB.t('No products found', 'কোনো পণ্য পাওয়া যায়নি') + '</h3></div>';
       const { total, totalPages } = res.pagination;
       let pag = '';
-      for (let i = 1; i <= totalPages; i++) pag += '<button class="' + (i === page ? 'active' : '') + '" onclick="loadProducts(' + i + ')">' + i + '</button>';
+      if (totalPages > 1) {
+        if (page > 1) pag += '<button onclick="loadProducts(' + (page - 1) + ')">&laquo;</button>';
+        const start = Math.max(1, page - 3); const end = Math.min(totalPages, page + 3);
+        if (start > 1) { pag += '<button onclick="loadProducts(1)">1</button>'; if (start > 2) pag += '<button disabled>...</button>'; }
+        for (let i = start; i <= end; i++) pag += '<button class="' + (i === page ? 'active' : '') + '" onclick="loadProducts(' + i + ')">' + i + '</button>';
+        if (end < totalPages) { if (end < totalPages - 1) pag += '<button disabled>...</button>'; pag += '<button onclick="loadProducts(' + totalPages + ')">' + totalPages + '</button>'; }
+        if (page < totalPages) pag += '<button onclick="loadProducts(' + (page + 1) + ')">&raquo;</button>';
+      }
       document.getElementById('pagination').innerHTML = pag;
     }
   }
   document.addEventListener('DOMContentLoaded', async () => {
     const cats = await MB.get('/categories');
     if (cats.success) { const sel = document.getElementById('filter-category'); cats.data.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; sel.appendChild(o); }); }
-    document.getElementById('filter-category').addEventListener('change', () => loadProducts(1));
-    document.getElementById('filter-sort').addEventListener('change', () => loadProducts(1));
-    document.getElementById('filter-stock').addEventListener('change', () => loadProducts(1));
+    try { const brands = await MB.get('/products/brands'); if (brands.success) { const sel = document.getElementById('filter-brand'); brands.data.forEach(b => { const o = document.createElement('option'); o.value = b.name; o.textContent = b.name + ' (' + b.count + ')'; sel.appendChild(o); }); } } catch(e) {}
+    ['filter-category','filter-brand','filter-sort','filter-form'].forEach(id => document.getElementById(id).addEventListener('change', () => loadProducts(1)));
+    ['filter-stock','filter-rx'].forEach(id => document.getElementById(id).addEventListener('change', () => loadProducts(1)));
+    document.getElementById('clear-filters').addEventListener('click', () => {
+      ['filter-category','filter-brand','filter-sort','filter-form'].forEach(id => document.getElementById(id).value = '');
+      ['filter-stock','filter-rx'].forEach(id => document.getElementById(id).checked = false);
+      loadProducts(1);
+    });
     loadProducts(1);
   });
 </script>

@@ -48,7 +48,7 @@
       </div>
     </div>
   </div></section>
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a><a href="/doctor-consultation">Doctor Consultation</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   <script>
@@ -84,7 +84,27 @@
       document.getElementById('payment-instruction').innerHTML = 'Send payment to: <strong>' + (numbers[method] || '') + '</strong> <button class="copy-btn" onclick="MB.copyText(\'' + (numbers[method] || '') + '\')">Copy</button><br>Then enter the Transaction ID below.';
     } else { details.style.display = 'none'; }
   }
-  function applyCoupon() { MB.toast('Coupon will be applied at order placement', 'info'); }
+  let appliedCoupon = null;
+  async function applyCoupon() {
+    const code = document.getElementById('co-coupon').value.trim();
+    if (!code) { MB.toast('Enter a coupon code', 'error'); return; }
+    const res = await MB.post('/orders/validate-coupon', { code, subtotal: cartData.total });
+    if (res.success) {
+      appliedCoupon = res.data;
+      MB.toast(res.data.message, 'success');
+      updateSummaryWithDiscount(res.data.discount);
+    } else { appliedCoupon = null; MB.toast(res.message || 'Invalid coupon', 'error'); }
+  }
+  function updateSummaryWithDiscount(discount) {
+    const delivery = cartData.total >= 500 ? 0 : 60;
+    const finalTotal = cartData.total - discount + delivery;
+    let html = '';
+    cartData.items.forEach(item => { html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>' + item.name + ' x' + item.quantity + '</span><span>' + MB.formatPrice(item.total) + '</span></div>'; });
+    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;"><span>Delivery</span><span>' + (delivery === 0 ? 'Free' : MB.formatPrice(delivery)) + '</span></div>';
+    if (discount > 0) html += '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--primary);"><span>Coupon Discount</span><span>-' + MB.formatPrice(discount) + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;border-top:2px solid var(--border);"><span>Total</span><span>' + MB.formatPrice(finalTotal) + '</span></div>';
+    document.getElementById('order-summary').innerHTML = html;
+  }
   async function placeOrder() {
     const name = document.getElementById('co-name').value;
     const phone = document.getElementById('co-phone').value;

@@ -35,6 +35,22 @@ router.get('/dashboard', authenticate, authorize('admin', 'manager'), asyncHandl
     return expiry <= threshold && expiry > new Date();
   });
 
+  const categoryCounts = {};
+  products.filter(p => p.active !== false).forEach(p => {
+    const cat = p.category || 'Uncategorized';
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+  });
+  const categoryBreakdown = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+
+  const topProducts = [...products].filter(p => p.active !== false).sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0)).slice(0, 10).map(p => ({ id: p.id, name: p.name, strength: p.strength, sold: p.soldCount || 0, stock: p.stockQuantity || 0 }));
+
+  const manufacturerCounts = {};
+  products.filter(p => p.active !== false).forEach(p => {
+    const m = p.manufacturer || 'Unknown';
+    manufacturerCounts[m] = (manufacturerCounts[m] || 0) + 1;
+  });
+  const topManufacturers = Object.entries(manufacturerCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([name, count]) => ({ name, count }));
+
   res.json({
     success: true,
     data: {
@@ -60,6 +76,9 @@ router.get('/dashboard', authenticate, authorize('admin', 'manager'), asyncHandl
       onlineSalesTotal: orders.reduce((s, o) => s + (o.total || 0), 0),
       posSalesTotal: posSales.reduce((s, p) => s + (p.total || 0), 0),
       refundTotal: refunds.reduce((s, r) => s + (r.refundTotal || 0), 0),
+      categoryBreakdown,
+      topProducts,
+      topManufacturers,
     },
   });
 }));
@@ -416,6 +435,28 @@ router.put('/coupons/:id', authenticate, authorize('admin', 'manager'), asyncHan
 router.delete('/coupons/:id', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   DataService.get('coupons').delete(req.params.id);
   res.json({ success: true, message: 'Coupon deleted' });
+}));
+
+// Loyalty Points Config
+router.get('/loyalty-config', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const settings = DataService.get('settings').findOne({ key: 'loyalty' });
+  res.json({
+    success: true, data: settings?.value || {
+      enabled: true, pointsPerTaka: 1, redeemRate: 0.1, minRedeemPoints: 100,
+      welcomeBonus: 50, referralBonus: 100, birthdayBonus: 200,
+    },
+  });
+}));
+
+router.put('/loyalty-config', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+  let settings = DataService.get('settings').findOne({ key: 'loyalty' });
+  if (settings) {
+    DataService.get('settings').update(settings.id, { value: req.body });
+  } else {
+    DataService.get('settings').create({ key: 'loyalty', value: req.body });
+  }
+  logAudit(req, 'loyalty_config_updated', req.body);
+  res.json({ success: true, message: 'Loyalty config updated' });
 }));
 
 module.exports = router;

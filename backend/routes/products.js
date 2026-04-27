@@ -65,7 +65,13 @@ router.get('/categories', asyncHandler(async (req, res) => {
 }));
 
 router.get('/brands', asyncHandler(async (req, res) => {
-  const brands = DataService.get('brands').findAll({}).filter(b => b.active !== false);
+  const products = DataService.get('products').findAll({}).filter(p => p.active !== false);
+  const brandCounts = {};
+  products.forEach(p => {
+    const m = p.manufacturer || 'Unknown';
+    brandCounts[m] = (brandCounts[m] || 0) + 1;
+  });
+  const brands = Object.entries(brandCounts).sort((a, b) => a[0].localeCompare(b[0])).map(([name, count]) => ({ name, count }));
   res.json({ success: true, data: brands });
 }));
 

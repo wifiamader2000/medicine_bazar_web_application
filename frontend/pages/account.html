@@ -30,7 +30,6 @@
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   <script>
-  MB.loadUser();
   if (!MB.isLoggedIn()) window.location.href = '/login?redirect=/account';
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['profile','orders','prescriptions'][i] === name));

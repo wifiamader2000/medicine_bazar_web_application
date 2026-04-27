@@ -69,7 +69,7 @@ router.put('/purchase-orders/:id/status', authenticate, authorize('admin', 'mana
   DataService.get('purchaseOrders').update(req.params.id, { status, statusHistory: history });
 
   // If received, update stock
-  if (status === 'received') {
+  if (status === 'received' && po.status !== 'received') {
     for (const item of (po.items || [])) {
       if (item.productId) {
         const product = DataService.get('products').findById(item.productId);

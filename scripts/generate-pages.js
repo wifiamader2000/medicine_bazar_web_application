@@ -539,6 +539,7 @@ fs.writeFileSync(path.join(pagesDir, 'account.html'), wrap('My Account', 'আম
     const urlPath = window.location.pathname;
     if (urlPath.includes('/orders')) showTab('orders');
     else if (urlPath.includes('/prescriptions')) showTab('prescriptions');
+    else if (urlPath.includes('/loyalty')) showTab('loyalty');
     else if (urlPath.includes('/wishlist')) showTab('wishlist');
     else if (urlPath.includes('/addresses')) showTab('addresses');
   });

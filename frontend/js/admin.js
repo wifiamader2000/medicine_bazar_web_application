@@ -530,6 +530,7 @@ function showReceipt(sale, items, discount, method, phone) {
     <div class="center" style="margin-top:8px;"><p>Thank you for your purchase!</p><p style="font-size:10px;">Return policy: 7 days for damaged items</p></div>
   </body></html>`;
   const w = window.open('', 'receipt', 'width=340,height=600');
+  if (!w) { MB.toast('Please allow popups to print receipt', 'error'); return; }
   w.document.write(receiptHtml);
   w.document.close();
   setTimeout(() => w.print(), 500);
@@ -662,11 +663,21 @@ async function loadPurchaseOrders(el) {
     </div>
     <div id="po-form" style="display:none;" class="card" style="margin-bottom:16px;">
       <h3>New Purchase Order</h3>
-      <div class="form-group"><label>Supplier</label><select id="po-supplier" class="form-control">
-        <option value="">Select Supplier</option>
-        ${(supRes.data || []).map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('')}
-      </select></div>
-      <div class="form-group"><label>Expected Delivery</label><input type="date" id="po-delivery" class="form-control"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Supplier</label><select id="po-supplier" class="form-control">
+          <option value="">Select Supplier</option>
+          ${(supRes.data || []).map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('')}
+        </select></div>
+        <div class="form-group"><label>Expected Delivery</label><input type="date" id="po-delivery" class="form-control"></div>
+      </div>
+      <h4 style="margin:12px 0 8px;">Items</h4>
+      <div id="po-items-list"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px;">
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Product Name</label><input type="text" id="po-item-name" class="form-control" placeholder="Medicine name"></div>
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Qty</label><input type="number" id="po-item-qty" class="form-control" value="1" min="1"></div>
+        <div class="form-group" style="margin:0;"><label style="font-size:12px;">Unit Cost (৳)</label><input type="number" id="po-item-cost" class="form-control" value="0" step="0.01"></div>
+        <button class="btn btn-outline btn-sm" onclick="addPOItem()">Add</button>
+      </div>
       <div class="form-group"><label>Notes</label><textarea id="po-notes" class="form-control" rows="2"></textarea></div>
       <button class="btn btn-primary" onclick="savePO()">Create PO</button>
       <button class="btn btn-outline" onclick="document.getElementById('po-form').style.display='none'">Cancel</button>
@@ -677,15 +688,39 @@ async function loadPurchaseOrders(el) {
     </tbody></table></div>
     ${(sugRes.data || []).length > 0 ? '<h3 style="margin-top:24px;margin-bottom:12px;">Reorder Suggestions</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Current Stock</th><th>Reorder Level</th><th>Suggested Qty</th></tr></thead><tbody>' + sugRes.data.slice(0, 20).map(s => '<tr><td>' + s.name + '</td><td style="color:var(--alert-red);font-weight:700;">' + s.currentStock + '</td><td>' + s.reorderLevel + '</td><td>' + s.suggestedQuantity + '</td></tr>').join('') + '</tbody></table></div>' : ''}`;
 }
-function showPOForm() { document.getElementById('po-form').style.display = 'block'; }
+let poItems = [];
+function showPOForm() { poItems = []; renderPOItems(); document.getElementById('po-form').style.display = 'block'; }
+function addPOItem() {
+  const name = document.getElementById('po-item-name').value.trim();
+  const quantity = parseInt(document.getElementById('po-item-qty').value) || 1;
+  const unitCost = parseFloat(document.getElementById('po-item-cost').value) || 0;
+  if (!name) { MB.toast('Enter product name', 'error'); return; }
+  poItems.push({ name, quantity, unitCost });
+  document.getElementById('po-item-name').value = '';
+  document.getElementById('po-item-qty').value = '1';
+  document.getElementById('po-item-cost').value = '0';
+  renderPOItems();
+}
+function renderPOItems() {
+  const el = document.getElementById('po-items-list');
+  if (!el) return;
+  if (poItems.length === 0) { el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">No items added yet</p>'; return; }
+  const total = poItems.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+  el.innerHTML = '<div class="table-wrap" style="margin-bottom:8px;"><table><thead><tr><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th></th></tr></thead><tbody>' +
+    poItems.map((item, i) => '<tr><td>' + item.name + '</td><td>' + item.quantity + '</td><td>' + MB.formatPrice(item.unitCost) + '</td><td>' + MB.formatPrice(item.quantity * item.unitCost) + '</td><td><span style="cursor:pointer;color:var(--alert-red);" onclick="poItems.splice(' + i + ',1);renderPOItems();">&#10005;</span></td></tr>').join('') +
+    '</tbody></table></div><p style="font-weight:700;margin-bottom:8px;">Total: ' + MB.formatPrice(total) + '</p>';
+}
 async function savePO() {
   const supplierId = document.getElementById('po-supplier').value;
   if (!supplierId) { MB.toast('Select a supplier', 'error'); return; }
-  await MB.post('/suppliers/purchase-orders', {
-    supplierId, items: [], notes: document.getElementById('po-notes').value,
-    expectedDelivery: document.getElementById('po-delivery').value,
-  });
-  MB.toast('Purchase order created', 'success'); loadSection('purchase-orders');
+  if (poItems.length === 0) { MB.toast('Add at least one item', 'error'); return; }
+  try {
+    await MB.post('/suppliers/purchase-orders', {
+      supplierId, items: poItems, notes: document.getElementById('po-notes').value,
+      expectedDelivery: document.getElementById('po-delivery').value,
+    });
+    MB.toast('Purchase order created', 'success'); loadSection('purchase-orders');
+  } catch (err) { MB.toast(err.message || 'Failed to create PO', 'error'); }
 }
 async function updatePOStatus(id, status) {
   if (!status) return;

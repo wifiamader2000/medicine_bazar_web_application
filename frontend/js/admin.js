@@ -79,7 +79,7 @@ async function loadDashboard(el) {
       <div class="chart-card"><h3>Stock Status</h3><div class="chart-placeholder">Sold: ${d.soldPercentage}% | Remaining: ${d.remainingStockPercentage}%</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
-      ${d.categoryBreakdown && d.categoryBreakdown.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Products by Category</h3><div class="table-wrap"><table><thead><tr><th>Category</th><th>Count</th><th>%</th></tr></thead><tbody>' + d.categoryBreakdown.map(c => '<tr><td>' + c.name + '</td><td><strong>' + c.count + '</strong></td><td>' + ((c.count / d.totalProducts) * 100).toFixed(1) + '%</td></tr>').join('') + '</tbody></table></div></div>' : ''}
+      ${d.categoryBreakdown && d.categoryBreakdown.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Products by Category</h3><div class="table-wrap"><table><thead><tr><th>Category</th><th>Count</th><th>%</th></tr></thead><tbody>' + d.categoryBreakdown.map(c => '<tr><td>' + c.name + '</td><td><strong>' + c.count + '</strong></td><td>' + ((c.count / (d.activeProducts || d.totalProducts || 1)) * 100).toFixed(1) + '%</td></tr>').join('') + '</tbody></table></div></div>' : ''}
       ${d.topProducts && d.topProducts.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Top Selling Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Sold</th><th>Stock</th></tr></thead><tbody>' + d.topProducts.map(p => '<tr><td>' + p.name + (p.strength ? ' ' + p.strength : '') + '</td><td><strong>' + p.sold + '</strong></td><td>' + p.stock + '</td></tr>').join('') + '</tbody></table></div></div>' : ''}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
@@ -418,7 +418,7 @@ async function posSearch() {
   const res = await MB.get('/search/suggestions?q=' + encodeURIComponent(q) + '&limit=20');
   if (res.success) {
     if (res.data.length === 0) {
-      document.getElementById('pos-results').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No products found for "' + q + '"</p>';
+      document.getElementById('pos-results').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No products found for "' + q.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + '"</p>';
       return;
     }
     document.getElementById('pos-results').innerHTML = res.data.map(p => `

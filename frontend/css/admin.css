@@ -37,6 +37,12 @@
 .chart-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .chart-card h3 { font-size: 16px; margin-bottom: 16px; }
 .chart-placeholder { height: 200px; background: var(--bg); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; }
+.metric-bars { display: grid; gap: 18px; padding: 8px 0; }
+.metric-bars div { display: grid; gap: 8px; }
+.metric-bars span { color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+.metric-bars strong { font-size: 20px; color: var(--text); }
+.metric-bars i { display: block; height: 12px; min-width: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--teal)); box-shadow: 0 6px 18px rgba(15,157,118,.18); }
+.metric-bars.stock i { background: linear-gradient(90deg, var(--trust-blue), var(--primary)); }
 
 /* POS */
 .pos-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; height: calc(100vh - 120px); }

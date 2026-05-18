@@ -12,6 +12,11 @@ const { authenticate, authorize } = require('./middleware/auth');
 
 const app = express();
 
+const fs = require('fs');
+for (const dir of [config.paths.logs, config.paths.database, config.paths.uploads]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
 // Security
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -25,7 +30,6 @@ if (config.env !== 'test') {
   app.use(morgan('combined', {
     stream: {
       write: (message) => {
-        const fs = require('fs');
         const logPath = path.join(config.paths.logs, 'access.log');
         fs.appendFileSync(logPath, message);
       },
@@ -158,14 +162,24 @@ function gracefulShutdown(signal) {
   }, 10000);
 }
 
-const server = app.listen(config.port, config.host, () => {
-  console.log(`\n Medicine Bazar Server`);
-  console.log(`   URL: http://${config.host === '0.0.0.0' ? 'localhost' : config.host}:${config.port}`);
-  console.log(`   Env: ${config.env}`);
-  console.log(`   Storage: ${config.db.type}`);
-  console.log(`   Products: ${require('./services/DataService').get('products').count()}`);
-  console.log('');
-});
+let server;
+
+function startServer() {
+  if (server) return server;
+  server = app.listen(config.port, config.host, () => {
+    console.log(`\n Medicine Bazar Server`);
+    console.log(`   URL: http://${config.host === '0.0.0.0' ? 'localhost' : config.host}:${config.port}`);
+    console.log(`   Env: ${config.env}`);
+    console.log(`   Storage: ${config.db.type}`);
+    console.log(`   Products: ${require('./services/DataService').get('products').count()}`);
+    console.log('');
+  });
+  return server;
+}
+
+if (require.main === module) {
+  startServer();
+}
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
@@ -176,4 +190,4 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
 });
 
-module.exports = app;
+module.exports = { app, startServer };

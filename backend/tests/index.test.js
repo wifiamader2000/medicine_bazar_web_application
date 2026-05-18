@@ -30,6 +30,18 @@ function request(method, path, body = null, headers = {}) {
 
 describe('Medicine Bazar API Tests', () => {
   let adminToken = null;
+  let server = null;
+
+  before(async () => {
+    process.env.NODE_ENV = 'test';
+    const appServer = require('../server');
+    server = appServer.startServer();
+    await new Promise(resolve => setTimeout(resolve, 300));
+  });
+
+  after(async () => {
+    if (server) await new Promise(resolve => server.close(resolve));
+  });
 
   describe('Health Check', () => {
     it('should return healthy status', async () => {

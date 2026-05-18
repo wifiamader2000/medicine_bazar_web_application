@@ -65,9 +65,9 @@ const importUpload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.csv', '.xlsx', '.xls', '.txt'];
+    const allowed = ['.csv', '.txt'];
     if (!allowed.includes(ext)) {
-      return cb(new Error('Only CSV, Excel, or TXT files allowed'), false);
+      return cb(new Error('Only CSV or tab-delimited TXT files are allowed. Excel import is disabled in the production path.'), false);
     }
     cb(null, true);
   },

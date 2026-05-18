@@ -66,16 +66,11 @@ findJsFiles(path.join(__dirname, '..', 'scripts'));
 
 for (const file of jsFiles) {
   try {
-    require(file);
+    const code = fs.readFileSync(file, 'utf8');
+    new Function('exports', 'require', 'module', '__filename', '__dirname', code);
     checks.push({ name: `Syntax: ${path.relative(path.join(__dirname, '..'), file)}`, status: 'pass' });
   } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND' && !err.message.includes(file)) {
-      checks.push({ name: `Syntax: ${path.relative(path.join(__dirname, '..'), file)}`, status: 'pass', note: 'Dependency not installed' });
-    } else if (err instanceof SyntaxError) {
-      checks.push({ name: `Syntax: ${path.relative(path.join(__dirname, '..'), file)}`, status: 'fail', error: err.message });
-    } else {
-      checks.push({ name: `Syntax: ${path.relative(path.join(__dirname, '..'), file)}`, status: 'pass' });
-    }
+    checks.push({ name: `Syntax: ${path.relative(path.join(__dirname, '..'), file)}`, status: 'fail', error: err.message });
   }
 }
 

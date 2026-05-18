@@ -70,19 +70,21 @@ router.get('/brands', asyncHandler(async (req, res) => {
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {
-  const product = DataService.get('products').findById(req.params.id);
+  const products = DataService.get('products').findAll({});
+  const product = DataService.get('products').findById(req.params.id) ||
+    products.find(p => p.slug === req.params.id || slugify(p.name) === req.params.id);
   if (!product) return res.status(404).json({ success: false, message: 'Product not found', messageBn: 'পণ্য পাওয়া যায়নি' });
 
   let alternatives = [];
   if (product.genericName) {
-    alternatives = DataService.get('products').findAll({})
+    alternatives = products
       .filter(p => p.id !== product.id && p.genericName === product.genericName && p.active !== false)
       .slice(0, 6);
   }
 
   let related = [];
   if (product.category) {
-    related = DataService.get('products').findAll({})
+    related = products
       .filter(p => p.id !== product.id && p.category === product.category && p.active !== false)
       .slice(0, 6);
   }
@@ -126,6 +128,19 @@ router.post('/:id/image', authenticate, authorize('admin', 'manager'), productIm
   DataService.get('products').update(req.params.id, { images, imageUrl: images[0] });
   logAudit(req, 'product_image_uploaded', { productId: req.params.id });
   res.json({ success: true, data: { imageUrl, images } });
+}));
+
+router.post('/:id/image-from-media', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const { mediaId } = req.body;
+  const product = DataService.get('products').findById(req.params.id);
+  if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+  const media = DataService.get('media').findById(mediaId);
+  if (!media || media.active === false) return res.status(404).json({ success: false, message: 'Media not found' });
+  const images = [media.url, ...(product.images || []).filter(url => url !== media.url)];
+  const updated = DataService.get('products').update(req.params.id, { images, imageUrl: media.url, mediaId: media.id });
+  DataService.get('media').update(media.id, { assignedTo: req.params.id, usage: 'product' });
+  logAudit(req, 'product_media_assigned', { productId: req.params.id, mediaId: media.id });
+  res.json({ success: true, data: updated });
 }));
 
 function slugify(text) {

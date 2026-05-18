@@ -74,8 +74,14 @@ async function loadDashboard(el) {
       <div class="stat-card red"><div class="label">Refunds</div><div class="value">${d.totalRefunds}</div><div class="sub">${MB.formatPrice(d.refundTotal)}</div></div>
     </div>
     <div class="chart-grid">
-      <div class="chart-card"><h3>Sales Overview</h3><div class="chart-placeholder">Online: ${MB.formatPrice(d.onlineSalesTotal)} | POS: ${MB.formatPrice(d.posSalesTotal)}</div></div>
-      <div class="chart-card"><h3>Stock Status</h3><div class="chart-placeholder">Sold: ${d.soldPercentage}% | Remaining: ${d.remainingStockPercentage}%</div></div>
+      <div class="chart-card"><h3>Sales Overview</h3><div class="metric-bars">
+        <div><span>Online</span><strong>${MB.formatPrice(d.onlineSalesTotal)}</strong><i style="width:${Math.min(100, d.onlineSalesTotal / Math.max(d.onlineSalesTotal + d.posSalesTotal, 1) * 100)}%"></i></div>
+        <div><span>POS</span><strong>${MB.formatPrice(d.posSalesTotal)}</strong><i style="width:${Math.min(100, d.posSalesTotal / Math.max(d.onlineSalesTotal + d.posSalesTotal, 1) * 100)}%"></i></div>
+      </div></div>
+      <div class="chart-card"><h3>Stock Status</h3><div class="metric-bars stock">
+        <div><span>Sold</span><strong>${d.soldPercentage}%</strong><i style="width:${d.soldPercentage}%"></i></div>
+        <div><span>Remaining</span><strong>${d.remainingStockPercentage}%</strong><i style="width:${d.remainingStockPercentage}%"></i></div>
+      </div></div>
     </div>
     ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => `<tr><td>${p.name}</td><td style="color:var(--alert-red);font-weight:700;">${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
 
@@ -97,10 +103,11 @@ async function loadProducts(el) {
 
 function loadImport(el) {
   el.innerHTML = `
-    <div class="card" style="max-width:600px;">
+    <div class="card" style="max-width:760px;">
       <h3 style="margin-bottom:16px;">Import Products</h3>
-      <p style="margin-bottom:12px;color:var(--text-secondary);">Upload CSV, Excel (.xlsx), or TXT file with product data.</p>
-      <div class="form-group"><label>Select File</label><input type="file" id="import-file" class="form-control" accept=".csv,.xlsx,.xls,.txt"></div>
+      <p style="margin-bottom:12px;color:var(--text-secondary);">Upload CSV or tab-delimited TXT product data. Excel import is disabled in production because the xlsx parser has unresolved advisories.</p>
+      <div class="alert alert-info">Supported fields: medicine name, Bangla name, generic, company, category, strength, dosage form, pack size, SKU/barcode, prices, stock, batch, expiry, Rx flag, image/media, aliases, usage, dosage, side effects, warnings, storage, and alternatives.</div>
+      <div class="form-group"><label>Select File</label><input type="file" id="import-file" class="form-control" accept=".csv,.txt"></div>
       <button class="btn btn-primary" onclick="previewImport()">Preview Import</button>
     </div>
     <div id="import-preview" style="margin-top:20px;"></div>`;
@@ -123,13 +130,14 @@ async function previewImport() {
         <div class="stat-card orange"><div class="label">Duplicates</div><div class="value">${d.duplicates}</div></div>
         <div class="stat-card teal"><div class="label">New Products</div><div class="value">${d.newProducts}</div></div>
       </div>
-      ${d.newProducts > 0 ? `<button class="btn btn-primary btn-lg" onclick="commitImport('${d.importId}', ${JSON.stringify(d.preview).replace(/'/g, "\\'")})" >Import ${d.newProducts} Products</button>` : '<div class="alert alert-warning">No new products to import</div>'}
+      <div class="alert alert-info">${d.formatNote || ''}</div>
+      ${d.newProducts > 0 ? `<button class="btn btn-primary btn-lg" onclick="commitImport('${d.importId}')" >Import ${d.newProducts} Products</button>` : '<div class="alert alert-warning">No new products to import</div>'}
       ${d.invalidRows > 0 ? '<h4 style="margin-top:16px;">Invalid Rows:</h4><div class="table-wrap"><table><thead><tr><th>Row</th><th>Error</th></tr></thead><tbody>' + d.invalidDetails.map(r => `<tr><td>${r.row}</td><td>${r.error}</td></tr>`).join('') + '</tbody></table></div>' : ''}
     </div>`;
 }
 
-async function commitImport(importId, products) {
-  const res = await MB.post('/admin/import/commit', { importId, products });
+async function commitImport(importId) {
+  const res = await MB.post('/admin/import/commit', { importId });
   if (res.success) { MB.toast(`${res.data.count} products imported!`, 'success'); loadSection('products'); }
   else MB.toast(res.message || 'Import failed', 'error');
 }
@@ -288,18 +296,44 @@ async function loadAuditLogs(el) {
 
 async function loadMedia(el) {
   const res = await MB.get('/admin/media');
-  el.innerHTML = `<div class="form-group" style="max-width:400px;"><label>Upload Media</label><input type="file" id="media-file" class="form-control" accept="image/*"><button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="uploadMedia()">Upload</button></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:20px;">
-    ${(res.data || []).map(m => `<div class="card" style="padding:8px;text-align:center;"><img src="${m.url}" style="width:100%;height:120px;object-fit:contain;border-radius:4px;"><p style="font-size:11px;margin-top:4px;word-break:break-all;">${m.originalName || m.fileName}</p></div>`).join('')}
+  el.innerHTML = `<div class="card" style="max-width:760px;">
+      <h3 style="margin-bottom:12px;">Media Library</h3>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+        <div class="form-group"><label>Upload Image</label><input type="file" id="media-file" class="form-control" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+        <div class="form-group"><label>Alt Text</label><input type="text" id="media-alt" class="form-control" placeholder="Medicine image"></div>
+        <div class="form-group"><label>Usage</label><select id="media-category" class="form-control"><option value="product">Product</option><option value="category">Category</option><option value="brand">Brand</option><option value="banner">Banner</option><option value="fallback">Fallback</option><option value="payment">Payment Proof</option></select></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="uploadMedia()">Upload</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:20px;">
+    ${(res.data || []).map(m => `<div class="card" style="padding:8px;"><img src="${m.url}" style="width:100%;height:130px;object-fit:contain;border-radius:4px;background:var(--bg);"><p style="font-size:12px;margin-top:6px;word-break:break-all;"><strong>${m.altText || m.originalName || m.fileName}</strong></p><p style="font-size:11px;color:var(--text-muted);">${m.category || 'general'} ${m.usage ? ' | ' + m.usage : ''}</p><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;"><button class="btn btn-outline btn-sm" onclick="editMedia('${m.id}', '${(m.altText || '').replace(/'/g, "\\'")}', '${m.category || 'general'}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMedia('${m.id}')">Delete</button></div></div>`).join('') || '<div class="empty-state"><h3>No media yet</h3><p>Upload product, category, brand, and banner images.</p></div>'}
     </div>`;
 }
 
 async function uploadMedia() {
   const file = document.getElementById('media-file').files[0];
   if (!file) return;
-  const fd = new FormData(); fd.append('file', file);
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('altText', document.getElementById('media-alt')?.value || '');
+  fd.append('category', document.getElementById('media-category')?.value || 'product');
   const res = await MB.upload('/admin/media', fd);
   if (res.success) { MB.toast('Uploaded', 'success'); loadSection('media'); }
+}
+
+async function editMedia(id, altText, category) {
+  const nextAlt = prompt('Alt text:', altText) ?? altText;
+  const nextCategory = prompt('Category:', category) ?? category;
+  await MB.put(`/admin/media/${id}`, { altText: nextAlt, category: nextCategory });
+  MB.toast('Media updated', 'success');
+  loadSection('media');
+}
+
+async function deleteMedia(id) {
+  if (!confirm('Delete this media file?')) return;
+  await MB.del(`/admin/media/${id}`);
+  MB.toast('Media deleted', 'success');
+  loadSection('media');
 }
 
 async function loadCoupons(el) {

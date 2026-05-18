@@ -42,7 +42,12 @@ After the script completes, it will output a JSON summary. Look for:
 - `"importedCount"`: Should show the number of newly added medicines (e.g., ~30,000).
 - `"currentProductCount"`: The new total number of products.
 
-You can also run count checks by viewing the output or searching the website.
+To verify the counts, you can run the following command in the terminal:
+\`\`\`bash
+node -e "const db = require('./backend/services/DataService'); console.log('Products:', db.get('products').count());"
+\`\`\`
+
+**WARNING: Sample import is not full catalog.** The existing data inside `scripts/fixtures/bd-medicine-sample/` is only a tiny sample. You MUST download and place the full dataset to get all medicines.
 
 ## 6. Troubleshooting
 

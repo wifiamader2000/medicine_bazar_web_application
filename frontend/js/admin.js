@@ -1,7 +1,70 @@
 /* Admin Panel JS */
-(function() {
-  if (!MB.isLoggedIn() || !MB.isStaff()) {
-    window.location.href = '/login?redirect=/admin';
+const ADMIN_ROLE_SECTIONS = {
+  admin: ['dashboard', 'orders', 'pos', 'products', 'import', 'categories', 'brands', 'media', 'banners', 'prescriptions', 'payments', 'lab-tests', 'pharmacy-apps', 'coupons', 'campaigns', 'blogs', 'reports-sales', 'reports-stock', 'reports-expiry', 'reports-refunds', 'analytics', 'users', 'settings', 'audit-logs'],
+  cashier: ['pos'],
+  pharmacist: ['prescriptions'],
+};
+
+function sectionFromAdminPath() {
+  const page = window.location.pathname.split('/').pop().replace('.html', '');
+  if (page === 'pos') return 'pos';
+  if (['prescription', 'prescriptions', 'prescription-queue'].includes(page)) return 'prescriptions';
+  if (!page || page === 'admin' || page === 'index' || page === 'dashboard') return 'dashboard';
+  return page;
+}
+
+function canAccessAdminSection(section) {
+  return (ADMIN_ROLE_SECTIONS[MB.user?.role] || []).includes(section);
+}
+
+function showAdminForbidden(section) {
+  document.body.innerHTML = `
+    <section class="section">
+      <div class="container" style="max-width:560px;">
+        <div class="card text-center">
+          <h1>403</h1>
+          <h2>Access denied</h2>
+          <p>You do not have permission to open this admin page.</p>
+          <p style="color:var(--text-muted);font-size:14px;">Requested section: ${section}</p>
+          <a class="btn btn-primary" href="/">Go home</a>
+        </div>
+      </div>
+    </section>`;
+}
+
+function applyAdminRoleUI() {
+  const allowed = ADMIN_ROLE_SECTIONS[MB.user?.role] || [];
+  document.querySelectorAll('.admin-nav a[href^="#"]').forEach((link) => {
+    const section = link.getAttribute('href').slice(1);
+    const visible = allowed.includes(section);
+    link.style.display = visible ? '' : 'none';
+  });
+  document.querySelectorAll('.admin-nav-section').forEach((sectionLabel) => {
+    let next = sectionLabel.nextElementSibling;
+    let hasVisibleLink = false;
+    while (next && !next.classList.contains('admin-nav-section')) {
+      if (next.matches?.('a[href^="#"]') && next.style.display !== 'none') hasVisibleLink = true;
+      next = next.nextElementSibling;
+    }
+    sectionLabel.style.display = hasVisibleLink ? '' : 'none';
+  });
+}
+
+(async function() {
+  MB.loadUser();
+  if (!MB.token) {
+    window.location.href = '/login.html?next=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
+  }
+
+  try {
+    const res = await MB.get('/auth/me');
+    MB.user = res.data;
+    localStorage.setItem('mb_user', JSON.stringify(MB.user));
+  } catch {
+    localStorage.removeItem('mb_token');
+    localStorage.removeItem('mb_user');
+    window.location.href = '/login.html?next=' + encodeURIComponent(window.location.pathname + window.location.search);
     return;
   }
 
@@ -10,12 +73,20 @@
     userInfo.innerHTML = `<div class="name">${MB.user.name}</div><div class="role">${MB.user.role}</div>`;
   }
 
-  // Load initial section from hash
-  const hash = window.location.hash.substring(1) || 'dashboard';
-  loadSection(hash);
+  applyAdminRoleUI();
+  const initialSection = window.location.hash.substring(1) || sectionFromAdminPath();
+  if (!canAccessAdminSection(initialSection)) {
+    showAdminForbidden(initialSection);
+    return;
+  }
+  loadSection(initialSection);
 })();
 
 async function loadSection(section) {
+  if (!canAccessAdminSection(section)) {
+    showAdminForbidden(section);
+    return;
+  }
   const content = document.getElementById('admin-content');
   const title = document.getElementById('admin-page-title');
   document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
@@ -39,7 +110,9 @@ async function loadSection(section) {
       case 'settings': title.textContent = 'Settings'; await loadSettings(content); break;
       case 'audit-logs': title.textContent = 'Audit Logs'; await loadAuditLogs(content); break;
       case 'media': title.textContent = 'Media Manager'; await loadMedia(content); break;
+      case 'banners': title.textContent = 'Banners'; await loadBanners(content); break;
       case 'coupons': title.textContent = 'Coupons'; await loadCoupons(content); break;
+      case 'campaigns': title.textContent = 'Campaigns'; await loadCampaigns(content); break;
       case 'blogs': title.textContent = 'Blog Posts'; await loadBlogs(content); break;
       case 'lab-tests': title.textContent = 'Lab Tests'; await loadLabTests(content); break;
       case 'pharmacy-apps': title.textContent = 'Pharmacy Applications'; await loadPharmacyApps(content); break;
@@ -47,6 +120,8 @@ async function loadSection(section) {
       case 'reports-sales': title.textContent = 'Sales Report'; await loadSalesReport(content); break;
       case 'reports-stock': title.textContent = 'Stock Report'; await loadStockReport(content); break;
       case 'reports-expiry': title.textContent = 'Expiry Report'; await loadExpiryReport(content); break;
+      case 'reports-refunds': title.textContent = 'Refunds'; await loadRefundsReport(content); break;
+      case 'analytics': title.textContent = 'Analytics'; await loadAnalytics(content); break;
       default: title.textContent = section; content.innerHTML = '<div class="empty-state"><h3>Section not found</h3></div>';
     }
   } catch (err) {
@@ -93,33 +168,78 @@ async function loadDashboard(el) {
 }
 
 async function loadProducts(el) {
-  const res = await MB.get('/products?limit=50');
+  const filters = await MB.get('/search/filters').catch(() => ({ data: {} }));
+  const f = filters.data || {};
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+        <input id="product-search-filter" class="form-control" placeholder="Search products">
+        <select id="product-manufacturer-filter" class="form-control"><option value="">All manufacturers</option>${(f.manufacturers || []).map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+        <select id="product-generic-filter" class="form-control"><option value="">All generics</option>${(f.generics || []).slice(0, 500).map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+        <select id="product-form-filter" class="form-control"><option value="">All dosage forms</option>${(f.dosageForms || []).map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+        <select id="product-class-filter" class="form-control"><option value="">All drug classes</option>${(f.drugClasses || []).map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+        <select id="product-indication-filter" class="form-control"><option value="">All indications</option>${(f.indications || []).slice(0, 500).map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+        <select id="product-rx-filter" class="form-control"><option value="">Rx: all</option><option value="true">Prescription required</option><option value="false">No prescription</option></select>
+        <select id="product-stock-filter" class="form-control"><option value="">Stock: all</option><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock</option></select>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="loadProductTable()">Apply Filters</button>
+    </div>
+    <div id="product-table"></div>`;
+  await loadProductTable();
+}
+
+async function loadProductTable() {
+  const el = document.getElementById('product-table') || document.getElementById('admin-content');
+  const params = new URLSearchParams({ limit: '50' });
+  const filterMap = [
+    ['product-search-filter', 'search'],
+    ['product-manufacturer-filter', 'manufacturer'],
+    ['product-generic-filter', 'generic'],
+    ['product-form-filter', 'dosageForm'],
+    ['product-class-filter', 'drugClass'],
+    ['product-indication-filter', 'indication'],
+    ['product-rx-filter', 'prescriptionRequired'],
+    ['product-stock-filter', 'stockStatus'],
+  ];
+  filterMap.forEach(([id, key]) => {
+    const value = document.getElementById(id)?.value;
+    if (value) params.set(key, value);
+  });
+  const res = await MB.get('/products?' + params.toString());
   if (!res.success) { el.innerHTML = '<div class="alert alert-error">Failed to load products</div>'; return; }
   el.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span>${res.pagination.total} total products</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Generic</th><th>Category</th><th>MRP</th><th>Price</th><th>Stock</th><th>Sold</th><th>Status</th></tr></thead><tbody>
-    ${res.data.map(p => `<tr><td><strong>${p.name}</strong> ${p.strength || ''}<br><small style="color:var(--text-muted);">${p.nameBn || ''}</small></td><td>${p.genericName || ''}</td><td>${p.category || ''}</td><td>${MB.formatPrice(p.mrp)}</td><td>${MB.formatPrice(p.sellingPrice)}</td><td>${p.stockQuantity || 0}</td><td>${p.soldCount || 0}</td><td>${p.active !== false ? '<span style="color:var(--primary);">Active</span>' : '<span style="color:var(--alert-red);">Inactive</span>'}</td></tr>`).join('')}
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Generic</th><th>Manufacturer</th><th>Form</th><th>Drug Class</th><th>Indication</th><th>Price</th><th>Stock</th><th>Rx</th><th>Status</th></tr></thead><tbody>
+    ${res.data.map(p => `<tr><td><strong>${p.name}</strong> ${p.strength || ''}<br><small style="color:var(--text-muted);">${p.nameBn || p.source || ''}</small></td><td>${p.genericName || ''}</td><td>${p.manufacturer || ''}</td><td>${p.dosageForm || ''}</td><td>${p.drugClass || ''}</td><td>${p.indication || (p.indications || []).slice(0, 2).join(', ')}</td><td>${p.sellingPrice || p.mrp ? MB.formatPrice(p.sellingPrice || p.mrp) : 'Not set'}</td><td>${p.stockQuantity || 0}</td><td>${p.prescriptionRequired ? 'Yes' : 'No'}</td><td>${p.active !== false ? '<span style="color:var(--primary);">Active</span>' : '<span style="color:var(--alert-red);">Inactive</span>'}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 
 function loadImport(el) {
   el.innerHTML = `
-    <div class="card" style="max-width:760px;">
+    <div id="import-stats"></div>
+    <div class="card" style="max-width:860px;">
       <h3 style="margin-bottom:16px;">Import Products</h3>
-      <p style="margin-bottom:12px;color:var(--text-secondary);">Upload CSV or tab-delimited TXT product data. Excel import is disabled in production because the xlsx parser has unresolved advisories.</p>
-      <div class="alert alert-info">Supported fields: medicine name, Bangla name, generic, company, category, strength, dosage form, pack size, SKU/barcode, prices, stock, batch, expiry, Rx flag, image/media, aliases, usage, dosage, side effects, warnings, storage, and alternatives.</div>
-      <div class="form-group"><label>Select File</label><input type="file" id="import-file" class="form-control" accept=".csv,.txt"></div>
+      <p style="margin-bottom:12px;color:var(--text-secondary);">Upload Medicine Bazar CSV or bd-medicine-scraper/Kaggle-compatible CSV files. Use only data you are licensed to import.</p>
+      <div class="alert alert-info">Dataset files supported: medicine.csv, manufacturer.csv, generic.csv, indication.csv, drug_class.csv, dosage_form.csv. Medical text is stored as reference content, not advice.</div>
+      <div class="form-group"><label>Import Mode</label><select id="import-mode" class="form-control"><option value="bd-medicine-dataset">bd-medicine-scraper/Kaggle dataset</option><option value="legacy-product-csv">Medicine Bazar product CSV</option></select></div>
+      <div class="form-group"><label>Select CSV/TXT File(s)</label><input type="file" id="import-file" class="form-control" accept=".csv,.txt" multiple></div>
       <button class="btn btn-primary" onclick="previewImport()">Preview Import</button>
     </div>
-    <div id="import-preview" style="margin-top:20px;"></div>`;
+    <div id="import-preview" style="margin-top:20px;"></div>
+    <div id="import-history" style="margin-top:20px;"></div>`;
+  loadImportStats();
+  loadImportHistory();
 }
 
 async function previewImport() {
-  const file = document.getElementById('import-file').files[0];
-  if (!file) { MB.toast('Select a file', 'error'); return; }
-  const fd = new FormData(); fd.append('file', file);
+  const files = Array.from(document.getElementById('import-file').files || []);
+  if (files.length === 0) { MB.toast('Select a file', 'error'); return; }
+  const fd = new FormData();
+  files.forEach(file => fd.append('files', file));
+  fd.append('mode', document.getElementById('import-mode').value);
   const res = await MB.upload('/admin/import/upload', fd);
   if (!res.success) { MB.toast(res.message || 'Upload failed', 'error'); return; }
   const d = res.data;
+  const importFiles = encodeURIComponent(JSON.stringify(d.importFiles || (d.importId ? [{ importId: d.importId, sourceName: d.sourceName }] : [])));
   document.getElementById('import-preview').innerHTML = `
     <div class="card">
       <h3>Import Preview</h3>
@@ -129,17 +249,61 @@ async function previewImport() {
         <div class="stat-card red"><div class="label">Invalid</div><div class="value">${d.invalidRows}</div></div>
         <div class="stat-card orange"><div class="label">Duplicates</div><div class="value">${d.duplicates}</div></div>
         <div class="stat-card teal"><div class="label">New Products</div><div class="value">${d.newProducts}</div></div>
+        <div class="stat-card blue"><div class="label">Updates</div><div class="value">${d.updateProducts || 0}</div></div>
       </div>
+      ${d.entityCounts ? `<div class="stats-grid" style="margin:16px 0;">
+        <div class="stat-card"><div class="label">Manufacturers</div><div class="value">${d.entityCounts.manufacturers || 0}</div></div>
+        <div class="stat-card"><div class="label">Generics</div><div class="value">${d.entityCounts.generics || 0}</div></div>
+        <div class="stat-card"><div class="label">Dosage Forms</div><div class="value">${d.entityCounts.dosageForms || 0}</div></div>
+        <div class="stat-card"><div class="label">Drug Classes</div><div class="value">${d.entityCounts.drugClasses || 0}</div></div>
+        <div class="stat-card"><div class="label">Indications</div><div class="value">${d.entityCounts.indications || 0}</div></div>
+      </div>` : ''}
       <div class="alert alert-info">${d.formatNote || ''}</div>
-      ${d.newProducts > 0 ? `<button class="btn btn-primary btn-lg" onclick="commitImport('${d.importId}')" >Import ${d.newProducts} Products</button>` : '<div class="alert alert-warning">No new products to import</div>'}
-      ${d.invalidRows > 0 ? '<h4 style="margin-top:16px;">Invalid Rows:</h4><div class="table-wrap"><table><thead><tr><th>Row</th><th>Error</th></tr></thead><tbody>' + d.invalidDetails.map(r => `<tr><td>${r.row}</td><td>${r.error}</td></tr>`).join('') + '</tbody></table></div>' : ''}
+      ${(d.newProducts > 0 || d.updateProducts > 0 || d.entityCounts) ? `<button class="btn btn-primary btn-lg" onclick="commitImport('${d.importId || ''}', '${d.mode || 'legacy-product-csv'}', '${importFiles}')" >Commit Import</button>` : '<div class="alert alert-warning">No new products to import</div>'}
+      ${d.preview && d.preview.length ? '<h4 style="margin-top:16px;">Preview:</h4><div class="table-wrap"><table><thead><tr><th>Name</th><th>Generic</th><th>Manufacturer</th><th>Price</th><th>Stock</th><th>Source</th></tr></thead><tbody>' + d.preview.map(p => `<tr><td>${p.name} ${p.strength || ''}</td><td>${p.genericName || ''}</td><td>${p.manufacturer || ''}</td><td>${p.sellingPrice || p.mrp ? MB.formatPrice(p.sellingPrice || p.mrp) : 'Not set'}</td><td>${p.stockQuantity || 0}</td><td>${p.source || p.importedSource || ''}</td></tr>`).join('') + '</tbody></table></div>' : ''}
+      ${d.invalidRows > 0 ? '<h4 style="margin-top:16px;">Invalid Rows:</h4><div class="table-wrap"><table><thead><tr><th>Row</th><th>Error</th></tr></thead><tbody>' + d.invalidDetails.map(r => `<tr><td>${r.file || ''} #${r.row}</td><td>${r.error}</td></tr>`).join('') + '</tbody></table></div>' : ''}
+      ${d.duplicates > 0 ? '<h4 style="margin-top:16px;">Duplicate Rows:</h4><div class="table-wrap"><table><thead><tr><th>Row</th><th>Action</th><th>Reason</th></tr></thead><tbody>' + d.duplicateDetails.map(r => `<tr><td>${r.file || ''} #${r.row || '-'}</td><td>${r.action || 'duplicate'}</td><td>${r.reason || r.name || ''}</td></tr>`).join('') + '</tbody></table></div>' : ''}
     </div>`;
 }
 
-async function commitImport(importId) {
-  const res = await MB.post('/admin/import/commit', { importId });
-  if (res.success) { MB.toast(`${res.data.count} products imported!`, 'success'); loadSection('products'); }
+async function commitImport(importId, mode = 'legacy-product-csv', encodedFiles = '') {
+  const importFiles = encodedFiles ? JSON.parse(decodeURIComponent(encodedFiles)) : null;
+  const res = await MB.post('/admin/import/commit', { importId, mode, importFiles });
+  if (res.success) { MB.toast(`${res.data.count} products imported, ${res.data.updatedCount || 0} updated`, 'success'); loadSection('import'); }
   else MB.toast(res.message || 'Import failed', 'error');
+}
+
+async function loadImportStats() {
+  const el = document.getElementById('import-stats');
+  if (!el) return;
+  const res = await MB.get('/admin/import/stats').catch(() => null);
+  if (!res?.success) return;
+  const d = res.data;
+  el.innerHTML = `<div class="stats-grid" style="margin-bottom:16px;">
+    <div class="stat-card teal"><div class="label">Imported Medicines</div><div class="value">${d.importedMedicines}</div><div class="sub">${d.source}</div></div>
+    <div class="stat-card"><div class="label">Manufacturers</div><div class="value">${d.manufacturers}</div></div>
+    <div class="stat-card"><div class="label">Generics</div><div class="value">${d.generics}</div></div>
+    <div class="stat-card"><div class="label">Dosage Forms</div><div class="value">${d.dosageForms}</div></div>
+    <div class="stat-card"><div class="label">Drug Classes</div><div class="value">${d.drugClasses}</div></div>
+    <div class="stat-card"><div class="label">Indications</div><div class="value">${d.indications}</div></div>
+  </div>`;
+}
+
+async function loadImportHistory() {
+  const el = document.getElementById('import-history');
+  if (!el) return;
+  const res = await MB.get('/admin/import/history').catch(() => null);
+  if (!res?.success) return;
+  el.innerHTML = `<div class="card"><h3 style="margin-bottom:12px;">Import History</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Source</th><th>Products</th><th>Updated</th><th>Failed</th><th>Duplicates</th><th>By</th><th>Rollback</th></tr></thead><tbody>
+    ${(res.data || []).slice(0, 20).map(h => `<tr><td>${MB.formatDate(h.createdAt)}</td><td>${h.source || h.mode || '-'}</td><td>${h.count || 0}</td><td>${h.updatedCount || 0}</td><td>${h.failedRows || 0}</td><td>${h.duplicates || 0}</td><td>${h.importedBy || '-'}</td><td>${h.rollbackSafe && !h.rolledBack ? `<button class="btn btn-danger btn-sm" onclick="rollbackImport('${h.id}')">Rollback</button>` : (h.rolledBack ? 'Rolled back' : '-')}</td></tr>`).join('') || '<tr><td colspan="8">No import history</td></tr>'}
+  </tbody></table></div></div>`;
+}
+
+async function rollbackImport(id) {
+  if (!confirm('Rollback this import? Imported products will be removed and updated products restored.')) return;
+  const res = await MB.post(`/admin/import/${id}/rollback`, {});
+  if (res.success) { MB.toast('Import rolled back', 'success'); loadSection('import'); }
+  else MB.toast(res.message || 'Rollback failed', 'error');
 }
 
 async function loadCategories(el) {
@@ -336,6 +500,23 @@ async function deleteMedia(id) {
   loadSection('media');
 }
 
+async function loadBanners(el) {
+  const res = await MB.get('/admin/banners');
+  el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="promptAddBanner()">+ Add Banner</button>
+    <div class="table-wrap"><table><thead><tr><th>Title</th><th>Link</th><th>Image</th><th>Status</th></tr></thead><tbody>
+    ${(res.data || []).map(b => `<tr><td><strong>${b.title || '-'}</strong><br><small>${b.titleBn || ''}</small></td><td>${b.link || '-'}</td><td>${b.imageUrl ? `<a href="${b.imageUrl}" target="_blank">View</a>` : '-'}</td><td>${b.active !== false ? 'Active' : 'Inactive'}</td></tr>`).join('') || '<tr><td colspan="4">No banners yet</td></tr>'}
+    </tbody></table></div>`;
+}
+
+async function promptAddBanner() {
+  const title = prompt('Banner title:');
+  if (!title) return;
+  const link = prompt('Link:', '/shop') || '/shop';
+  await MB.post('/admin/banners', { title, link, active: true });
+  MB.toast('Banner added', 'success');
+  loadSection('banners');
+}
+
 async function loadCoupons(el) {
   const res = await MB.get('/admin/coupons');
   el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="promptAddCoupon()">+ Add Coupon</button>
@@ -352,6 +533,23 @@ async function promptAddCoupon() {
   await MB.post('/admin/coupons', { code, type, value });
   MB.toast('Coupon added', 'success');
   loadSection('coupons');
+}
+
+async function loadCampaigns(el) {
+  const res = await MB.get('/admin/campaigns');
+  el.innerHTML = `<button class="btn btn-primary" style="margin-bottom:16px;" onclick="promptAddCampaign()">+ Add Campaign</button>
+    <div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Discount</th><th>Dates</th><th>Status</th></tr></thead><tbody>
+    ${(res.data || []).map(c => `<tr><td><strong>${c.title}</strong><br><small>${c.titleBn || ''}</small></td><td>${c.type || 'general'}</td><td>${c.discountPercent || 0}%</td><td>${c.startDate || '-'} to ${c.endDate || '-'}</td><td>${c.active !== false ? 'Active' : 'Inactive'}</td></tr>`).join('') || '<tr><td colspan="5">No campaigns yet</td></tr>'}
+    </tbody></table></div>`;
+}
+
+async function promptAddCampaign() {
+  const title = prompt('Campaign title:');
+  if (!title) return;
+  const discountPercent = parseFloat(prompt('Discount percent:', '0') || '0');
+  await MB.post('/admin/campaigns', { title, discountPercent, type: 'general', active: true });
+  MB.toast('Campaign added', 'success');
+  loadSection('campaigns');
 }
 
 async function loadBlogs(el) {
@@ -402,7 +600,7 @@ async function loadPOS(el) {
   el.innerHTML = `
     <div class="pos-layout">
       <div class="pos-products">
-        <div class="search-bar" style="margin-bottom:16px;"><input type="text" id="pos-search" placeholder="Search product..." class="form-control"><button class="btn btn-primary btn-sm" style="position:absolute;right:4px;top:4px;" onclick="posSearch()">Search</button></div>
+        <div class="pos-search-box"><input type="text" id="pos-search" placeholder="Search product..." class="form-control"><button class="btn btn-primary btn-sm" onclick="posSearch()">Search</button></div>
         <div id="pos-results"></div>
       </div>
       <div class="pos-bill">
@@ -416,8 +614,10 @@ async function loadPOS(el) {
             <button class="btn btn-primary btn-lg" onclick="completeSale('cash')">Cash</button>
             <button class="btn btn-outline btn-lg" onclick="completeSale('bkash')">bKash</button>
             <button class="btn btn-outline btn-lg" onclick="completeSale('nagad')">Nagad</button>
+            <button class="btn btn-outline btn-lg" onclick="completeSale('upay')">Upay</button>
             <button class="btn btn-danger btn-lg" onclick="clearPosBill()">Clear</button>
           </div>
+          <button class="btn btn-outline btn-block" id="pos-print-receipt" style="margin-top:12px;" onclick="printLastReceipt()" disabled>Print Receipt</button>
           <button class="btn btn-outline btn-block" style="margin-top:12px;" onclick="closePosSession()">Close Session</button>
         </div>
       </div>
@@ -425,6 +625,7 @@ async function loadPOS(el) {
 }
 
 let posBillItems = [];
+let lastPosSale = null;
 
 async function openPosSession() {
   const opening = parseFloat(document.getElementById('pos-opening').value) || 0;
@@ -473,13 +674,24 @@ async function completeSale(method) {
   const phone = document.getElementById('pos-phone')?.value || '';
   const res = await MB.post('/pos/sale', { items: posBillItems, paymentMethod: method, customerPhone: phone, discount });
   if (res.success) {
+    lastPosSale = res.data;
     MB.toast(`Sale complete! Invoice: ${res.data.invoiceNumber}`, 'success');
     posBillItems = [];
     renderPosBill();
+    const printButton = document.getElementById('pos-print-receipt');
+    if (printButton) printButton.disabled = false;
   } else { MB.toast(res.message || 'Sale failed', 'error'); }
 }
 
 function clearPosBill() { posBillItems = []; renderPosBill(); }
+
+function printLastReceipt() {
+  if (!lastPosSale) { MB.toast('Complete a sale first', 'error'); return; }
+  const receipt = window.open('', '_blank', 'width=380,height=640');
+  if (!receipt) { MB.toast('Popup blocked. Allow popups to print receipt.', 'error'); return; }
+  receipt.document.write(`<!DOCTYPE html><html><head><title>${lastPosSale.invoiceNumber}</title><style>body{font-family:Arial,sans-serif;padding:16px;max-width:320px}h2,p{margin:4px 0}.row{display:flex;justify-content:space-between;border-bottom:1px dashed #ccc;padding:6px 0}.total{font-weight:700;font-size:18px;margin-top:10px}</style></head><body><h2>Medicine Bazar</h2><p>Invoice: ${lastPosSale.invoiceNumber}</p><p>Cashier: ${lastPosSale.cashierName || ''}</p><p>${MB.formatDate(lastPosSale.createdAt)}</p>${(lastPosSale.items || []).map(i => `<div class="row"><span>${i.name} x ${i.quantity}</span><span>${MB.formatPrice(i.total)}</span></div>`).join('')}<div class="row"><span>Discount</span><span>${MB.formatPrice(lastPosSale.discount || 0)}</span></div><p class="total">Total: ${MB.formatPrice(lastPosSale.total)}</p><p>Payment: ${lastPosSale.paymentMethod}</p><p>Thank you.</p><script>window.print();<\/script></body></html>`);
+  receipt.document.close();
+}
 
 async function closePosSession() {
   const closing = prompt('Closing cash amount:');
@@ -536,4 +748,33 @@ async function loadExpiryReport(el) {
     </div>
     ${d.expired.length > 0 ? '<div class="card" style="margin-top:16px;"><h3 style="color:var(--alert-red);">Expired Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>Stock</th></tr></thead><tbody>' + d.expired.map(p => `<tr><td>${p.name}</td><td>${p.batch || ''}</td><td>${p.expiryDate}</td><td>${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}
     ${d.expiringSoon.length > 0 ? '<div class="card" style="margin-top:16px;"><h3 style="color:var(--offer-orange);">Expiring Soon (within 3 months)</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>Stock</th></tr></thead><tbody>' + d.expiringSoon.map(p => `<tr><td>${p.name}</td><td>${p.batch || ''}</td><td>${p.expiryDate}</td><td>${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
+}
+
+async function loadRefundsReport(el) {
+  const res = await MB.get('/reports/refunds');
+  if (!res.success) return;
+  const d = res.data;
+  el.innerHTML = `<div class="stats-grid">
+      <div class="stat-card red"><div class="label">Refunds</div><div class="value">${d.summary.count}</div></div>
+      <div class="stat-card orange"><div class="label">Refund Amount</div><div class="value">${MB.formatPrice(d.summary.totalAmount)}</div></div>
+    </div>
+    <div class="table-wrap" style="margin-top:16px;"><table><thead><tr><th>Refund #</th><th>Invoice</th><th>Amount</th><th>Reason</th><th>Date</th></tr></thead><tbody>
+    ${(d.refunds || []).map(r => `<tr><td>${r.refundNumber}</td><td>${r.invoiceNumber || '-'}</td><td>${MB.formatPrice(r.refundTotal)}</td><td>${r.reason || '-'}</td><td>${MB.formatDate(r.createdAt)}</td></tr>`).join('') || '<tr><td colspan="5">No refunds yet</td></tr>'}
+    </tbody></table></div>`;
+}
+
+async function loadAnalytics(el) {
+  const res = await MB.get('/reports/analytics');
+  if (!res.success) return;
+  const d = res.data;
+  el.innerHTML = `<div class="stats-grid">
+      <div class="stat-card"><div class="label">Products</div><div class="value">${d.summary.productCount}</div></div>
+      <div class="stat-card blue"><div class="label">Orders</div><div class="value">${d.summary.orderCount}</div></div>
+      <div class="stat-card teal"><div class="label">POS Sales</div><div class="value">${d.summary.posSaleCount}</div></div>
+      <div class="stat-card orange"><div class="label">Revenue</div><div class="value">${MB.formatPrice(d.summary.revenue)}</div></div>
+    </div>
+    <div class="chart-grid" style="margin-top:16px;">
+      <div class="chart-card"><h3>Top Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Sold</th><th>Stock</th></tr></thead><tbody>${(d.topProducts || []).map(p => `<tr><td>${p.name}</td><td>${p.soldCount}</td><td>${p.stockQuantity}</td></tr>`).join('') || '<tr><td colspan="3">No sales data yet</td></tr>'}</tbody></table></div></div>
+      <div class="chart-card"><h3>Zero-result Searches</h3><div class="table-wrap"><table><thead><tr><th>Query</th><th>Date</th></tr></thead><tbody>${(d.zeroResultSearches || []).map(s => `<tr><td>${s.query}</td><td>${MB.formatDate(s.createdAt)}</td></tr>`).join('') || '<tr><td colspan="2">No zero-result searches</td></tr>'}</tbody></table></div></div>
+    </div>`;
 }

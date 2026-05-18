@@ -71,7 +71,7 @@ const MB_COMPONENTS = {
             </div>
             <div class="footer-col">
               <h3>Policies</h3>
-              <a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/return">Return</a><a href="/faq">FAQ</a>
+              <a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/return">Return</a><a href="/shipping-policy">Shipping Policy</a><a href="/faq">FAQ</a>
             </div>
             <div class="footer-col">
               <h3>Social</h3>

@@ -130,6 +130,33 @@ router.get('/search-logs', authenticate, authorize('admin', 'manager'), asyncHan
   res.json({ success: true, data: logs.slice(0, 100) });
 }));
 
+router.get('/analytics', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const products = DataService.get('products').findAll({}).filter(p => p.active !== false);
+  const orders = DataService.get('orders').findAll({});
+  const posSales = DataService.get('posSales').findAll({});
+  const prescriptions = DataService.get('prescriptions').findAll({});
+  const searches = DataService.get('searchLogs').findAll({});
+  const revenue = orders.reduce((s, o) => s + (o.total || 0), 0) + posSales.reduce((s, p) => s + (p.total || 0), 0);
+  const topProducts = [...products].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0)).slice(0, 10)
+    .map(p => ({ id: p.id, name: p.name, soldCount: p.soldCount || 0, stockQuantity: p.stockQuantity || 0 }));
+  const zeroResultSearches = searches.filter(s => s.resultCount === 0).slice(-20);
+  res.json({
+    success: true,
+    data: {
+      summary: {
+        productCount: products.length,
+        orderCount: orders.length,
+        posSaleCount: posSales.length,
+        prescriptionCount: prescriptions.length,
+        revenue,
+        pendingPaymentCount: orders.filter(o => o.paymentStatus === 'pending_verification').length,
+      },
+      topProducts,
+      zeroResultSearches,
+    },
+  });
+}));
+
 router.get('/export/:type', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
   const { type } = req.params;
   const { startDate, endDate } = req.query;
@@ -139,7 +166,14 @@ router.get('/export/:type', authenticate, authorize('admin', 'manager'), asyncHa
     case 'products': data = DataService.get('products').findAll({}); filename = 'products'; break;
     case 'orders': data = DataService.get('orders').findAll({}); filename = 'orders'; break;
     case 'pos-sales': data = DataService.get('posSales').findAll({}); filename = 'pos-sales'; break;
-    case 'customers': data = DataService.get('users').findAll({}).filter(u => u.role === 'customer').map(({ password, ...u }) => u); filename = 'customers'; break;
+    case 'customers': data = DataService.get('users').findAll({}).filter(u => u.role === 'customer').map(({
+      password,
+      resetPasswordTokenHash,
+      resetPasswordExpiresAt,
+      resetPasswordRequestedAt,
+      resetPasswordUsedAt,
+      ...u
+    }) => u); filename = 'customers'; break;
     default: return res.status(400).json({ success: false, message: 'Invalid export type' });
   }
   if (startDate) data = data.filter(d => d.createdAt >= startDate);

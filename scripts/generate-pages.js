@@ -26,7 +26,7 @@ function wrap(title, titleBn, bodyContent, extraScripts = '', extraHead = '') {
     <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
   </header>
   ${bodyContent}
-  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/shipping-policy">Shipping Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
   <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
   <script src="/js/app.js"></script>
   ${extraScripts}
@@ -108,9 +108,10 @@ fs.writeFileSync(path.join(pagesDir, 'product-detail.html'), wrap('Product Detai
     if (!res.success) { document.getElementById('product-detail').innerHTML = '<div class="empty-state"><h3>Product not found</h3><a href="/shop" class="btn btn-primary">Back to Shop</a></div>'; return; }
     const p = res.data;
     const discount = p.mrp && p.sellingPrice && p.sellingPrice < p.mrp ? Math.round((1 - p.sellingPrice / p.mrp) * 100) : 0;
+    const price = p.sellingPrice || p.mrp;
     document.title = p.name + ' - Medicine Bazar';
     document.getElementById('product-detail').innerHTML = \`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;">
+      <div class="product-detail-grid">
         <div class="card" style="text-align:center;padding:32px;">
           <img src="\${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" alt="\${p.name}" style="max-width:280px;max-height:280px;" onerror="this.src='/assets/images/medicine-placeholder.svg'">
         </div>
@@ -121,23 +122,33 @@ fs.writeFileSync(path.join(pagesDir, 'product-detail.html'), wrap('Product Detai
           \${p.manufacturer ? '<p style="margin-bottom:4px;"><strong>Manufacturer:</strong> ' + p.manufacturer + '</p>' : ''}
           \${p.dosageForm ? '<p style="margin-bottom:4px;"><strong>Form:</strong> ' + p.dosageForm + '</p>' : ''}
           \${p.packSize ? '<p style="margin-bottom:4px;"><strong>Pack:</strong> ' + p.packSize + '</p>' : ''}
+          \${p.drugClass ? '<p style="margin-bottom:4px;"><strong>Drug Class:</strong> ' + p.drugClass + '</p>' : ''}
+          \${p.indication ? '<p style="margin-bottom:4px;"><strong>Indication:</strong> ' + p.indication + '</p>' : ''}
           <div style="margin:16px 0;display:flex;align-items:center;gap:12px;">
-            <span style="font-size:32px;font-weight:700;color:var(--primary);">\${MB.formatPrice(p.sellingPrice || p.mrp)}</span>
+            <span style="font-size:32px;font-weight:700;color:var(--primary);">\${price ? MB.formatPrice(price) : 'Price on request'}</span>
             \${discount > 0 ? '<span style="font-size:18px;text-decoration:line-through;color:var(--text-muted);">' + MB.formatPrice(p.mrp) + '</span><span class="badge badge-discount">' + discount + '% OFF</span>' : ''}
           </div>
           \${p.prescriptionRequired ? '<div class="alert alert-warning" style="margin-bottom:12px;">&#9888; Prescription required for this medicine</div>' : ''}
+          <div class="alert alert-warning" style="margin-bottom:12px;">Consult doctor/pharmacist before use. চিকিৎসকের পরামর্শ ছাড়া ওষুধ সেবন করবেন না।</div>
           <div style="margin-bottom:8px;font-size:14px;">\${(p.stockQuantity || 0) > 0 ? '<span style="color:var(--primary);">&#9989; In Stock (' + p.stockQuantity + ' available)</span>' : '<span style="color:var(--alert-red);">&#10060; Out of Stock</span>'}</div>
           <div style="display:flex;gap:10px;margin:20px 0;">
             <button class="btn btn-primary btn-lg" onclick="MB.addToCart('\${p.id}')" \${(p.stockQuantity || 0) <= 0 ? 'disabled' : ''}>Add to Cart</button>
           </div>
           <div class="card" style="margin-top:20px;">
-            \${p.uses ? '<p><strong>Uses:</strong> ' + p.uses + '</p>' : ''}
+            \${p.uses || p.indication || (p.indications && p.indications.length) ? '<p><strong>Indication/Uses:</strong> ' + (p.uses || p.indication || p.indications.join(', ')) + '</p>' : ''}
+            \${p.indicationDescription ? '<p><strong>Indication Description:</strong> ' + p.indicationDescription + '</p>' : ''}
+            \${p.pharmacology ? '<p><strong>Pharmacology:</strong> ' + p.pharmacology + '</p>' : ''}
             \${p.dosage ? '<p><strong>Dosage:</strong> ' + p.dosage + '</p>' : ''}
             \${p.sideEffects ? '<p><strong>Side Effects:</strong> ' + p.sideEffects + '</p>' : ''}
+            \${p.precautions ? '<p><strong>Precautions:</strong> ' + p.precautions + '</p>' : ''}
+            \${p.contraindications ? '<p><strong>Contraindications:</strong> ' + p.contraindications + '</p>' : ''}
+            \${p.pregnancyWarning || p.lactationWarning ? '<p><strong>Pregnancy/Lactation:</strong> ' + [p.pregnancyWarning, p.lactationWarning].filter(Boolean).join(' ') + '</p>' : ''}
             \${p.warning ? '<p style="color:var(--alert-red);"><strong>Warning:</strong> ' + p.warning + '</p>' : ''}
             \${p.storage ? '<p><strong>Storage:</strong> ' + p.storage + '</p>' : ''}
+            \${p.monographPdfUrl ? '<p><strong>Monograph:</strong> <a href="' + p.monographPdfUrl + '" target="_blank" rel="noopener">Open PDF</a></p>' : ''}
           </div>
-          <div class="alert alert-info" style="margin-top:16px;">This information is for reference only. Consult your doctor or pharmacist.</div>
+          \${p.importedSource || p.source ? '<div class="alert alert-info" style="margin-top:16px;">Data source: ' + (p.importedSource || p.source) + '. Verify medicine information before use.</div>' : ''}
+          <div class="alert alert-info" style="margin-top:16px;">এই তথ্য শুধুমাত্র সাধারণ জ্ঞানের জন্য। চিকিৎসকের পরামর্শ ছাড়া ওষুধ সেবন করবেন না।</div>
         </div>
       </div>\`;
     if (p.alternatives && p.alternatives.length > 0) {
@@ -219,7 +230,7 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
   <section class="section"><div class="container">
     <h2 class="section-title">Checkout</h2>
     <div id="checkout-content">
-      <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;">
+      <div class="checkout-grid">
         <div>
           <div class="card" style="margin-bottom:16px;"><h3 style="margin-bottom:12px;">Shipping Address</h3>
             <div class="form-group"><label>Full Name</label><input type="text" id="co-name" class="form-control" required></div>
@@ -237,7 +248,7 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
             <div class="form-group"><label>Order Note</label><textarea id="co-note" class="form-control" rows="2" placeholder="Any special instructions..."></textarea></div>
           </div>
         </div>
-        <div class="card" style="position:sticky;top:80px;align-self:start;">
+        <div class="card checkout-summary">
           <h3 style="margin-bottom:12px;">Order Summary</h3>
           <div id="order-summary"><div class="loading"><div class="spinner"></div></div></div>
           <button class="btn btn-primary btn-block btn-lg" style="margin-top:16px;" onclick="placeOrder()">Place Order</button>
@@ -308,7 +319,7 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
       <div class="form-group"><label data-en="Password" data-bn="পাসওয়ার্ড">Password</label><input type="password" id="login-password" class="form-control" required></div>
       <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()" data-en="Login" data-bn="লগইন">Login</button>
       <p style="text-align:center;margin-top:16px;font-size:14px;"><a href="/register" data-en="Don't have an account? Register" data-bn="অ্যাকাউন্ট নেই? নিবন্ধন করুন">Don't have an account? Register</a></p>
-      <div style="text-align:center;margin-top:12px;"><a href="#" style="font-size:13px;color:var(--text-muted);">Forgot Password?</a></div>
+      <div style="text-align:center;margin-top:12px;"><a href="/forgot-password.html" style="font-size:13px;color:var(--text-muted);" data-en="Forgot password?" data-bn="পাসওয়ার্ড ভুলে গেছেন?">Forgot password?</a></div>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--text-muted);">
         <p>Future login options:</p>
         <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
@@ -318,7 +329,7 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
       </div>
     </div>
   </div></section>`, `<script>
-  if (MB.isLoggedIn()) window.location.href = '/account';
+  if (MB.isLoggedIn()) window.location.href = MB.accountTarget().href;
   async function doLogin() {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
@@ -327,7 +338,7 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
       const res = await MB.login(email, pass);
       if (res.success) {
         const params = new URLSearchParams(window.location.search);
-        window.location.href = params.get('redirect') || (MB.isStaff() ? '/admin' : '/account');
+        window.location.href = params.get('next') || params.get('redirect') || MB.accountTarget().href;
       } else {
         document.getElementById('login-error').textContent = res.message || 'Login failed';
         document.getElementById('login-error').classList.remove('hidden');
@@ -338,6 +349,68 @@ fs.writeFileSync(path.join(pagesDir, 'login.html'), wrap('Login', 'লগইন'
     }
   }
   document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>`));
+
+// FORGOT PASSWORD PAGE
+fs.writeFileSync(path.join(pagesDir, 'forgot-password.html'), wrap('Forgot Password', 'পাসওয়ার্ড ভুলে গেছেন', `
+  <section class="section"><div class="container" style="max-width:520px;">
+    <div class="card">
+      <h1 style="font-size:28px;margin-bottom:8px;" data-en="Forgot password" data-bn="পাসওয়ার্ড ভুলে গেছেন">Forgot password</h1>
+      <p style="color:var(--text-secondary);margin-bottom:22px;" data-en="Enter your email or mobile number. If an account matches, reset instructions will be sent." data-bn="আপনার ইমেইল বা মোবাইল নম্বর দিন। অ্যাকাউন্ট মিললে রিসেট নির্দেশনা পাঠানো হবে।">Enter your email or mobile number. If an account matches, reset instructions will be sent.</p>
+      <div id="forgot-message" class="hidden"></div>
+      <div class="form-group"><label for="forgot-identifier" data-en="Email or mobile number" data-bn="ইমেইল বা মোবাইল নম্বর">Email or mobile number</label><input type="text" id="forgot-identifier" class="form-control" autocomplete="username" required></div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="requestReset()" data-en="Send reset instructions" data-bn="রিসেট নির্দেশনা পাঠান">Send reset instructions</button>
+      <p style="text-align:center;margin-top:16px;font-size:14px;"><a href="/login" data-en="Back to login" data-bn="লগইনে ফিরে যান">Back to login</a></p>
+    </div>
+  </div></section>`, `<script>
+  function showForgotMessage(type, message) {
+    const box = document.getElementById('forgot-message');
+    box.className = 'alert alert-' + type;
+    box.innerHTML = message;
+  }
+  async function requestReset() {
+    const identifier = document.getElementById('forgot-identifier').value.trim();
+    if (!identifier) { showForgotMessage('error', 'Email or mobile number is required.'); return; }
+    try {
+      const res = await MB.post('/auth/forgot-password', { identifier, email: identifier });
+      const devLink = res.data && res.data.resetLink ? '<br><small>Development reset link: <a href="' + res.data.resetLink + '">open reset page</a></small>' : '';
+      showForgotMessage('success', (res.message || 'If an account matches, reset instructions will be sent.') + devLink);
+    } catch (err) { showForgotMessage('error', err.message || 'Could not process reset request.'); }
+  }
+  document.getElementById('forgot-identifier').addEventListener('keydown', e => { if (e.key === 'Enter') requestReset(); });
+</script>`));
+
+// RESET PASSWORD PAGE
+fs.writeFileSync(path.join(pagesDir, 'reset-password.html'), wrap('Reset Password', 'পাসওয়ার্ড রিসেট', `
+  <section class="section"><div class="container" style="max-width:520px;">
+    <div class="card">
+      <h1 style="font-size:28px;margin-bottom:8px;" data-en="Reset password" data-bn="পাসওয়ার্ড রিসেট করুন">Reset password</h1>
+      <p style="color:var(--text-secondary);margin-bottom:22px;" data-en="Choose a strong new password for your Medicine Bazar account." data-bn="আপনার মেডিসিন বাজার অ্যাকাউন্টের জন্য শক্তিশালী নতুন পাসওয়ার্ড দিন।">Choose a strong new password for your Medicine Bazar account.</p>
+      <div id="reset-message" class="hidden"></div>
+      <div class="form-group"><label for="reset-token" data-en="Reset token" data-bn="রিসেট টোকেন">Reset token</label><input type="text" id="reset-token" class="form-control" autocomplete="one-time-code" required></div>
+      <div class="form-group"><label for="reset-password" data-en="New password" data-bn="নতুন পাসওয়ার্ড">New password</label><input type="password" id="reset-password" class="form-control" autocomplete="new-password" required><small style="color:var(--text-muted);">Use 8+ characters with uppercase, lowercase, number and symbol.</small></div>
+      <div class="form-group"><label for="reset-confirm" data-en="Confirm password" data-bn="পাসওয়ার্ড নিশ্চিত করুন">Confirm password</label><input type="password" id="reset-confirm" class="form-control" autocomplete="new-password" required></div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="resetPassword()" data-en="Reset password" data-bn="পাসওয়ার্ড রিসেট করুন">Reset password</button>
+      <p style="text-align:center;margin-top:16px;font-size:14px;"><a href="/login" data-en="Back to login" data-bn="লগইনে ফিরে যান">Back to login</a></p>
+    </div>
+  </div></section>`, `<script>
+  const params = new URLSearchParams(window.location.search);
+  document.getElementById('reset-token').value = params.get('token') || '';
+  function showResetMessage(type, message) { const box = document.getElementById('reset-message'); box.className = 'alert alert-' + type; box.textContent = message; }
+  function strongEnough(password) { return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\\d/.test(password) && /[^A-Za-z0-9]/.test(password); }
+  async function resetPassword() {
+    const token = document.getElementById('reset-token').value.trim();
+    const password = document.getElementById('reset-password').value;
+    const confirmPassword = document.getElementById('reset-confirm').value;
+    if (!token) return showResetMessage('error', 'Reset token is required.');
+    if (!strongEnough(password)) return showResetMessage('error', 'Password must include uppercase, lowercase, number and symbol.');
+    if (password !== confirmPassword) return showResetMessage('error', 'Passwords do not match.');
+    try {
+      const res = await MB.post('/auth/reset-password', { token, password, confirmPassword });
+      showResetMessage('success', res.message || 'Password reset successful. Redirecting to login...');
+      setTimeout(() => { window.location.href = '/login'; }, 1600);
+    } catch (err) { showResetMessage('error', err.message || 'Could not reset password.'); }
+  }
 </script>`));
 
 // REGISTER PAGE
@@ -533,6 +606,7 @@ const staticPages = {
   'privacy.html': { title: 'Privacy Policy', content: '<h1>Privacy Policy</h1><h2 style="color:var(--text-secondary);">গোপনীয়তা নীতি</h2><div class="card" style="margin-top:24px;line-height:1.8;"><h3>Data Collection</h3><p>We collect personal information (name, email, phone, address) for order processing and delivery.</p><h3 style="margin-top:16px;">Prescription Privacy</h3><p>Prescription files are stored securely and accessible only by authorized pharmacists and the uploading customer. We do not share prescription data with third parties.</p><h3 style="margin-top:16px;">Data Protection</h3><p>We use industry-standard security measures to protect your data.</p><h3 style="margin-top:16px;">Cookie Policy</h3><p>We use essential cookies for session management and functionality.</p><h3 style="margin-top:16px;">Data Retention</h3><p>Your data is retained as long as your account is active. You may request data deletion by contacting us.</p><h3 style="margin-top:16px;">Contact</h3><p>For privacy concerns: support@medicinebazar.com</p></div>' },
   'terms.html': { title: 'Terms & Conditions', content: '<h1>Terms & Conditions</h1><h2 style="color:var(--text-secondary);">শর্তাবলী</h2><div class="card" style="margin-top:24px;line-height:1.8;"><p>By using Medicine Bazar, you agree to these terms.</p><h3 style="margin-top:16px;">Products</h3><p>All medicines sold are genuine and sourced from authorized distributors.</p><h3 style="margin-top:16px;">Prescription Medicines</h3><p>Prescription-required medicines will only be dispensed with a valid prescription reviewed by a licensed pharmacist.</p><h3 style="margin-top:16px;">Pricing</h3><p>Prices are subject to change. MRP is set by manufacturers.</p><h3 style="margin-top:16px;">Payment</h3><p>We accept Cash on Delivery, Nagad, bKash, Upay, and Merchant payments.</p><h3 style="margin-top:16px;">Medical Disclaimer</h3><p>Medicine Bazar is not a medical practitioner. Always consult your doctor before taking any medicine.</p></div>' },
   'return.html': { title: 'Return Policy', content: '<h1>Return Policy</h1><h2 style="color:var(--text-secondary);">রিটার্ন নীতি</h2><div class="card" style="margin-top:24px;line-height:1.8;"><h3>Returns</h3><p>We accept returns within 7 days of delivery for damaged or wrong products.</p><h3 style="margin-top:16px;">Non-Returnable Items</h3><ul style="margin:8px 0 8px 20px;"><li>Opened medicine packs</li><li>Refrigerated medicines</li><li>Prescription medicines</li><li>Medical devices after use</li></ul><h3 style="margin-top:16px;">Refund Process</h3><p>Approved refunds will be processed within 7 business days via the original payment method.</p></div>' },
+  'shipping-policy.html': { title: 'Shipping Policy', content: '<h1>Shipping Policy</h1><h2 style="color:var(--text-secondary);">ডেলিভারি নীতি</h2><div class="card" style="margin-top:24px;line-height:1.8;"><h3>Delivery area / ডেলিভারি এলাকা</h3><p>Medicine Bazar delivers within supported city and district areas in Bangladesh. Some remote locations may require extra confirmation before dispatch.</p><p>বাংলাদেশের নির্ধারিত শহর ও জেলা এলাকায় ডেলিভারি দেওয়া হয়। দূরবর্তী এলাকায় পাঠানোর আগে অতিরিক্ত নিশ্চিতকরণ লাগতে পারে।</p><h3 style="margin-top:16px;">Delivery time / ডেলিভারি সময়</h3><p>Standard delivery usually takes 1-3 business days after order confirmation. Urgent local orders may be handled faster depending on stock and rider availability.</p><h3 style="margin-top:16px;">Delivery charge / ডেলিভারি চার্জ</h3><p>Delivery charge depends on area, order size, and delivery method. The final charge is shown or confirmed before order processing.</p><h3 style="margin-top:16px;">Medicine delivery rules / ওষুধ ডেলিভারি নিয়ম</h3><p>Customers should check product name, strength, quantity, expiry date, and package condition during delivery.</p><h3 style="margin-top:16px;">Prescription medicine delivery / প্রেসক্রিপশন ওষুধ</h3><p>Prescription-required medicines are delivered only after a valid prescription is uploaded and reviewed by authorized staff.</p><h3 style="margin-top:16px;">Failed delivery / ব্যর্থ ডেলিভারি</h3><p>If the customer is unavailable, the phone is unreachable, or the address is incomplete, delivery may be rescheduled or cancelled. Re-delivery charges may apply.</p><h3 style="margin-top:16px;">Contact support / সাপোর্ট</h3><p>For delivery help, call 01602444532 or message us on WhatsApp/IMO at 01602444532.</p><div class="alert alert-warning" style="margin-top:20px;"><strong>Emergency medicine note:</strong> Medicine Bazar is not an emergency medical service. For urgent treatment, contact a doctor, hospital, or emergency service immediately.<br>জরুরি চিকিৎসার ক্ষেত্রে দ্রুত ডাক্তার, হাসপাতাল বা জরুরি সেবার সাথে যোগাযোগ করুন।</div></div>' },
   'faq.html': { title: 'FAQ', content: '<h1>Frequently Asked Questions</h1><h2 style="color:var(--text-secondary);">সচরাচর জিজ্ঞাসা</h2><div style="margin-top:24px;">' +
     [['How do I order medicines?','Browse our shop, add medicines to cart, proceed to checkout, and select your payment method.'],
      ['Do I need a prescription?','Some medicines require a prescription. These are marked with "Rx" badge.'],

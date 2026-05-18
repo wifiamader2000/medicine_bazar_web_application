@@ -27,10 +27,14 @@ function fileFilter(allowedMimes) {
   return (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (BLOCKED_EXTENSIONS.includes(ext)) {
-      return cb(new Error('File type not allowed'), false);
+      const err = new Error('File type not allowed');
+      err.status = 400;
+      return cb(err, false);
     }
     if (!allowedMimes.includes(file.mimetype)) {
-      return cb(new Error(`Invalid file type: ${file.mimetype}`), false);
+      const err = new Error(`Invalid file type: ${file.mimetype}`);
+      err.status = 400;
+      return cb(err, false);
     }
     cb(null, true);
   };
@@ -67,7 +71,9 @@ const importUpload = multer({
     const ext = path.extname(file.originalname).toLowerCase();
     const allowed = ['.csv', '.txt'];
     if (!allowed.includes(ext)) {
-      return cb(new Error('Only CSV or tab-delimited TXT files are allowed. Excel import is disabled in the production path.'), false);
+      const err = new Error('Only CSV or tab-delimited TXT files are allowed. Excel import is disabled in the production path.');
+      err.status = 400;
+      return cb(err, false);
     }
     cb(null, true);
   },

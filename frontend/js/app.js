@@ -25,7 +25,7 @@ const MB = {
   async api(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : this.apiBase + endpoint;
     const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
-    const config = { ...options, headers: { ...headers, ...(options.headers || {}) } };
+    const config = { credentials: 'same-origin', ...options, headers: { ...headers, ...(options.headers || {}) } };
     if (this.token) config.headers.Authorization = `Bearer ${this.token}`;
     const res = await fetch(url, config);
     const type = res.headers.get('content-type') || '';
@@ -47,6 +47,12 @@ const MB = {
 
   isLoggedIn() { return Boolean(this.token && this.user); },
   isStaff() { return ['admin', 'manager', 'pharmacist', 'cashier'].includes(this.user?.role); },
+  accountTarget() {
+    if (!this.isLoggedIn()) return { href: '/login', label: 'Login', icon: '&#128100;' };
+    if (this.user?.role === 'admin') return { href: '/admin/dashboard.html', label: 'Admin Panel', icon: '&#9881;' };
+    if (this.user?.role === 'cashier') return { href: '/admin/pos.html', label: 'POS', icon: '&#128179;' };
+    return { href: '/account', label: 'My Account', icon: '&#128100;' };
+  },
 
   async login(email, password) {
     const res = await this.post('/auth/login', { email, password });
@@ -59,7 +65,19 @@ const MB = {
     return res;
   },
 
+  async register(name, email, password, phone = '') {
+    const res = await this.post('/auth/register', { name, email, password, phone });
+    if (res.success) {
+      this.token = res.data.token;
+      this.user = res.data.user;
+      localStorage.setItem('mb_token', this.token);
+      localStorage.setItem('mb_user', JSON.stringify(this.user));
+    }
+    return res;
+  },
+
   logout() {
+    if (this.token) this.post('/auth/logout', {}).catch(() => {});
     this.token = null;
     this.user = null;
     localStorage.removeItem('mb_token');
@@ -70,13 +88,8 @@ const MB = {
   updateAuthUI() {
     const authArea = document.getElementById('auth-area');
     if (!authArea) return;
-    if (this.isLoggedIn()) {
-      authArea.innerHTML = `
-        <a href="/account" class="header-pill"><span class="icon">&#128100;</span><span>${this.user.name?.split(' ')[0] || 'Account'}</span></a>
-        ${this.isStaff() ? '<a href="/admin" class="header-pill"><span class="icon">&#9881;</span><span>Admin</span></a>' : ''}`;
-    } else {
-      authArea.innerHTML = `<a href="/login" class="header-pill"><span class="icon">&#128100;</span><span>${this.t('Login', 'লগইন')}</span></a>`;
-    }
+    const target = this.accountTarget();
+    authArea.innerHTML = `<a href="${target.href}" class="header-pill"><span class="icon">${target.icon}</span><span>${target.label}</span></a>`;
   },
 
   getLocalCart() {

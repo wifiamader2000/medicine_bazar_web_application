@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const { generateToken, authenticate, logAudit } = require('../middleware/auth');
@@ -7,6 +8,33 @@ const DataService = require('../services/DataService');
 const config = require('../config');
 
 const loginAttempts = new Map();
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+
+function hashResetToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function sanitizeUser(user) {
+  if (!user) return user;
+  const {
+    password,
+    resetPasswordTokenHash,
+    resetPasswordExpiresAt,
+    resetPasswordRequestedAt,
+    resetPasswordUsedAt,
+    ...safeUser
+  } = user;
+  return safeUser;
+}
+
+function isStrongPassword(password) {
+  return typeof password === 'string'
+    && password.length >= 8
+    && /[a-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
+}
 
 function checkLoginRateLimit(identifier) {
   const now = Date.now();
@@ -53,8 +81,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   });
   const token = generateToken(user);
   logAudit(req, 'register', { userId: user.id, email: user.email });
-  const { password: _, ...userWithoutPassword } = user;
-  res.status(201).json({ success: true, message: 'Registration successful', messageBn: 'নিবন্ধন সফল', data: { user: userWithoutPassword, token } });
+  res.status(201).json({ success: true, message: 'Registration successful', messageBn: 'নিবন্ধন সফল', data: { user: sanitizeUser(user), token } });
 }));
 
 router.post('/login', asyncHandler(async (req, res) => {
@@ -90,15 +117,19 @@ router.post('/login', asyncHandler(async (req, res) => {
   const token = generateToken(user);
   DataService.get('users').update(user.id, { lastLogin: new Date().toISOString() });
   logAudit(req, 'login_success', { userId: user.id, email: user.email, role: user.role });
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, message: 'Login successful', messageBn: 'লগইন সফল', data: { user: userWithoutPassword, token } });
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: config.isProduction(),
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  res.json({ success: true, message: 'Login successful', messageBn: 'লগইন সফল', data: { user: sanitizeUser(user), token } });
 }));
 
 router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const user = DataService.get('users').findById(req.user.id);
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, data: userWithoutPassword });
+  res.json({ success: true, data: sanitizeUser(user) });
 }));
 
 router.put('/profile', authenticate, asyncHandler(async (req, res) => {
@@ -107,8 +138,7 @@ router.put('/profile', authenticate, asyncHandler(async (req, res) => {
   if (name) updates.name = name;
   if (phone !== undefined) updates.phone = phone;
   const user = DataService.get('users').update(req.user.id, updates);
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, message: 'Profile updated', messageBn: 'প্রোফাইল আপডেট হয়েছে', data: userWithoutPassword });
+  res.json({ success: true, message: 'Profile updated', messageBn: 'প্রোফাইল আপডেট হয়েছে', data: sanitizeUser(user) });
 }));
 
 router.put('/change-password', authenticate, asyncHandler(async (req, res) => {
@@ -131,13 +161,84 @@ router.put('/change-password', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/forgot-password', asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ success: false, message: 'Email required' });
-  res.json({ success: true, message: 'If this email exists, a reset link will be sent', messageBn: 'যদি এই ইমেইল থাকে, রিসেট লিংক পাঠানো হবে' });
+  const identifier = String(req.body.email || req.body.identifier || '').trim().toLowerCase();
+  if (!identifier) {
+    logAudit(req, 'password_reset_request_failed', { reason: 'missing_identifier' });
+    return res.status(400).json({ success: false, message: 'Email or mobile number is required', messageBn: 'ইমেইল অথবা মোবাইল নম্বর প্রয়োজন' });
+  }
+
+  const users = DataService.get('users');
+  const user = identifier.includes('@')
+    ? users.findOne({ email: identifier })
+    : users.findAll({}).find(u => String(u.phone || '').replace(/\D/g, '') === identifier.replace(/\D/g, ''));
+
+  const response = {
+    success: true,
+    message: 'If an account matches, password reset instructions will be sent.',
+    messageBn: 'অ্যাকাউন্ট মিললে পাসওয়ার্ড রিসেট নির্দেশনা পাঠানো হবে।',
+  };
+
+  if (!user || !user.active) {
+    logAudit(req, 'password_reset_requested', { identifierType: identifier.includes('@') ? 'email' : 'phone', matched: false });
+    return res.json(response);
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  users.update(user.id, {
+    resetPasswordTokenHash: hashResetToken(token),
+    resetPasswordExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString(),
+    resetPasswordRequestedAt: new Date().toISOString(),
+    resetPasswordUsedAt: null,
+  });
+  logAudit(req, 'password_reset_requested', { userId: user.id, email: user.email, identifierType: identifier.includes('@') ? 'email' : 'phone', matched: true });
+
+  if (!config.isProduction() && req.body.debug === true) {
+    response.data = { resetLink: `/reset-password.html?token=${token}` };
+  }
+  res.json(response);
+}));
+
+router.post('/reset-password', asyncHandler(async (req, res) => {
+  const token = String(req.body.token || '').trim();
+  const newPassword = String(req.body.password || req.body.newPassword || '');
+  const confirmPassword = String(req.body.confirmPassword || '');
+
+  if (!token || !newPassword || !confirmPassword) {
+    logAudit(req, 'password_reset_failed', { reason: 'missing_fields' });
+    return res.status(400).json({ success: false, message: 'Token, new password and confirmation are required' });
+  }
+  if (newPassword !== confirmPassword) {
+    logAudit(req, 'password_reset_failed', { reason: 'password_mismatch' });
+    return res.status(400).json({ success: false, message: 'Passwords do not match' });
+  }
+  if (!isStrongPassword(newPassword)) {
+    logAudit(req, 'password_reset_failed', { reason: 'weak_password' });
+    return res.status(400).json({ success: false, message: 'Password must be at least 8 characters and include uppercase, lowercase, number and symbol' });
+  }
+
+  const tokenHash = hashResetToken(token);
+  const users = DataService.get('users');
+  const user = users.findAll({}).find(u => u.resetPasswordTokenHash === tokenHash);
+  if (!user || !user.resetPasswordExpiresAt || new Date(user.resetPasswordExpiresAt).getTime() < Date.now()) {
+    logAudit(req, 'password_reset_failed', { reason: 'invalid_or_expired_token' });
+    return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+  }
+
+  const hashed = await bcrypt.hash(newPassword, config.security.bcryptRounds);
+  users.update(user.id, {
+    password: hashed,
+    resetPasswordTokenHash: null,
+    resetPasswordExpiresAt: null,
+    resetPasswordUsedAt: new Date().toISOString(),
+  });
+  logAudit(req, 'password_reset_success', { userId: user.id, email: user.email });
+  res.clearCookie('token');
+  res.json({ success: true, message: 'Password reset successful. You can now login.' });
 }));
 
 router.post('/logout', authenticate, asyncHandler(async (req, res) => {
   logAudit(req, 'logout', { userId: req.user.id });
+  res.clearCookie('token');
   res.json({ success: true, message: 'Logged out successfully', messageBn: 'সফলভাবে লগআউট হয়েছে' });
 }));
 

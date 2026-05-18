@@ -6,12 +6,41 @@ const { productImageUpload } = require('../middleware/upload');
 const DataService = require('../services/DataService');
 
 router.get('/', asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, category, brand, search, sort, minPrice, maxPrice, inStock, prescriptionRequired } = req.query;
+  const {
+    page = 1,
+    limit = 20,
+    category,
+    brand,
+    manufacturer,
+    generic,
+    dosageForm,
+    drugClass,
+    indication,
+    search,
+    sort,
+    minPrice,
+    maxPrice,
+    inStock,
+    prescriptionRequired,
+    stockStatus,
+  } = req.query;
   const store = DataService.get('products');
   let items = store.findAll({});
 
   if (category) items = items.filter(p => p.category?.toLowerCase() === category.toLowerCase() || p.categorySlug === category);
   if (brand) items = items.filter(p => p.manufacturer?.toLowerCase() === brand.toLowerCase() || p.brandSlug === brand);
+  if (manufacturer) items = items.filter(p => p.manufacturer?.toLowerCase() === manufacturer.toLowerCase() || p.brandSlug === manufacturer);
+  if (generic) items = items.filter(p => p.genericName?.toLowerCase() === generic.toLowerCase());
+  if (dosageForm) items = items.filter(p => p.dosageForm?.toLowerCase() === dosageForm.toLowerCase());
+  if (drugClass) items = items.filter(p => p.drugClass?.toLowerCase() === drugClass.toLowerCase());
+  if (indication) {
+    const q = indication.toLowerCase();
+    items = items.filter(p =>
+      (p.indication || '').toLowerCase().includes(q) ||
+      (p.uses || '').toLowerCase().includes(q) ||
+      (p.indications || []).some(item => String(item).toLowerCase().includes(q))
+    );
+  }
   if (search) {
     const q = search.toLowerCase();
     items = items.filter(p =>
@@ -20,15 +49,22 @@ router.get('/', asyncHandler(async (req, res) => {
       (p.genericName || '').toLowerCase().includes(q) ||
       (p.manufacturer || '').toLowerCase().includes(q) ||
       (p.category || '').toLowerCase().includes(q) ||
+      (p.dosageForm || '').toLowerCase().includes(q) ||
+      (p.drugClass || '').toLowerCase().includes(q) ||
+      (p.indication || '').toLowerCase().includes(q) ||
+      (p.indications || []).some(i => String(i).toLowerCase().includes(q)) ||
       (p.sku || '').toLowerCase().includes(q) ||
       (p.barcode || '').toLowerCase().includes(q) ||
       (p.aliases || []).some(a => a.toLowerCase().includes(q)) ||
-      (p.uses || '').toLowerCase().includes(q)
+      (p.uses || '').toLowerCase().includes(q) ||
+      (p.searchKeywords || []).some(a => String(a).toLowerCase().includes(q))
     );
   }
   if (minPrice) items = items.filter(p => (p.sellingPrice || p.mrp || 0) >= parseFloat(minPrice));
   if (maxPrice) items = items.filter(p => (p.sellingPrice || p.mrp || 0) <= parseFloat(maxPrice));
   if (inStock === 'true') items = items.filter(p => (p.stockQuantity || 0) > 0);
+  if (stockStatus === 'in_stock') items = items.filter(p => (p.stockQuantity || 0) > 0);
+  if (stockStatus === 'out_of_stock') items = items.filter(p => (p.stockQuantity || 0) <= 0);
   if (prescriptionRequired === 'true') items = items.filter(p => p.prescriptionRequired);
   if (prescriptionRequired === 'false') items = items.filter(p => !p.prescriptionRequired);
 

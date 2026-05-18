@@ -8,7 +8,8 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
-const { authenticate, authorize } = require('./middleware/auth');
+const { extractToken, verifyToken, logAudit } = require('./middleware/auth');
+const DataService = require('./services/DataService');
 
 const app = express();
 
@@ -53,6 +54,65 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
+function adminSectionFromPath(reqPath) {
+  const page = path.basename(reqPath || '', '.html').toLowerCase();
+  if (!page || page === 'admin' || page === 'index') return 'dashboard';
+  if (page === 'dashboard') return 'dashboard';
+  if (page === 'pos') return 'pos';
+  if (['prescription', 'prescriptions', 'prescription-queue'].includes(page)) return 'prescriptions';
+  return page;
+}
+
+function rolesForAdminSection(section) {
+  if (section === 'pos') return ['admin', 'cashier'];
+  if (section === 'prescriptions') return ['admin', 'pharmacist'];
+  return ['admin'];
+}
+
+function sendAdminForbidden(res, section) {
+  res.status(403).send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Access denied - Medicine Bazar</title><link rel="stylesheet" href="/css/style.css"></head>
+<body><section class="section"><div class="container" style="max-width:560px;"><div class="card text-center">
+<h1>403</h1><h2>Access denied</h2><p>You do not have permission to open this admin page.</p>
+<p style="color:var(--text-muted);font-size:14px;">Requested section: ${section}</p>
+<a class="btn btn-primary" href="/">Go home</a></div></div></section></body></html>`);
+}
+
+function protectAdminPage(req, res, next) {
+  const wantsAdminPage = req.path === '/' || req.path === '' || req.path.endsWith('.html');
+  if (!wantsAdminPage) return next();
+
+  const token = extractToken(req);
+  const redirectTarget = `/login.html?next=${encodeURIComponent(req.originalUrl)}`;
+  if (!token) {
+    logAudit(req, 'unauthorized_admin_access_attempt', { reason: 'not_logged_in', section: adminSectionFromPath(req.path) });
+    return res.redirect(302, redirectTarget);
+  }
+
+  const decoded = verifyToken(token);
+  const user = decoded ? DataService.get('users').findById(decoded.id) : null;
+  if (!user || !user.active) {
+    logAudit(req, 'unauthorized_admin_access_attempt', { reason: 'invalid_or_inactive_session', section: adminSectionFromPath(req.path) });
+    res.clearCookie('token');
+    return res.redirect(302, redirectTarget);
+  }
+
+  req.user = { id: user.id, email: user.email, role: user.role, name: user.name };
+  const section = adminSectionFromPath(req.path);
+  const allowedRoles = rolesForAdminSection(section);
+  if (!allowedRoles.includes(user.role)) {
+    logAudit(req, 'unauthorized_admin_access_attempt', { section, requiredRoles: allowedRoles, userRole: user.role });
+    return sendAdminForbidden(res, section);
+  }
+
+  logAudit(req, 'admin_page_access', { section });
+  return res.sendFile(path.join(config.paths.frontend, 'admin', 'index.html'));
+}
+
+// Admin static files must be registered before the public root static middleware.
+app.use('/admin', protectAdminPage, express.static(path.join(config.paths.frontend, 'admin'), { index: false }));
+
 // Static files - public assets
 app.use('/', express.static(config.paths.frontend, { index: false }));
 app.use('/uploads/products', express.static(path.join(config.paths.uploads, 'products')));
@@ -60,14 +120,6 @@ app.use('/uploads/media', express.static(path.join(config.paths.uploads, 'media'
 app.use('/uploads/logos', express.static(path.join(config.paths.uploads, 'logos')));
 
 // Prescription files are NOT public - served through protected route only
-
-// Admin static files - protected
-app.use('/admin', (req, res, next) => {
-  if (req.path.endsWith('.html') || req.path === '/' || req.path === '') {
-    return res.sendFile(path.join(config.paths.frontend, 'admin', 'index.html'));
-  }
-  next();
-}, express.static(path.join(config.paths.frontend, 'admin')));
 
 // API Routes
 app.use('/api/v1/auth', require('./routes/auth'));
@@ -102,7 +154,15 @@ const pageRoutes = [
   ['/return', 'pages/return.html'],
   ['/faq', 'pages/faq.html'],
   ['/login', 'pages/login.html'],
+  ['/login.html', 'pages/login.html'],
+  ['/forgot-password', 'pages/forgot-password.html'],
+  ['/forgot-password.html', 'pages/forgot-password.html'],
+  ['/reset-password', 'pages/reset-password.html'],
+  ['/reset-password.html', 'pages/reset-password.html'],
   ['/register', 'pages/register.html'],
+  ['/register.html', 'pages/register.html'],
+  ['/shipping-policy', 'pages/shipping-policy.html'],
+  ['/shipping-policy.html', 'pages/shipping-policy.html'],
   ['/account', 'pages/account.html'],
   ['/account/orders', 'pages/account.html'],
   ['/account/prescriptions', 'pages/account.html'],
@@ -132,12 +192,12 @@ app.get('/blog/:slug', (req, res) => {
 });
 
 // Backward compatibility
-app.get('/about.html', (req, res) => res.redirect('/about'));
-app.get('/contact.html', (req, res) => res.redirect('/contact'));
-app.get('/privacy.html', (req, res) => res.redirect('/privacy'));
-app.get('/terms.html', (req, res) => res.redirect('/terms'));
-app.get('/return.html', (req, res) => res.redirect('/return'));
-app.get('/faq.html', (req, res) => res.redirect('/faq'));
+app.get('/about.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/about.html')));
+app.get('/contact.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/contact.html')));
+app.get('/privacy.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/privacy.html')));
+app.get('/terms.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/terms.html')));
+app.get('/return.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/return.html')));
+app.get('/faq.html', (req, res) => res.sendFile(path.join(config.paths.frontend, 'pages/faq.html')));
 
 // 404 and error handling
 app.use(notFound);

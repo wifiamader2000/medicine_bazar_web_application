@@ -47,6 +47,9 @@
 /* POS */
 .pos-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; height: calc(100vh - 120px); }
 .pos-products { overflow-y: auto; }
+.pos-search-box { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.pos-search-box input { min-width: 0; flex: 1; }
+.pos-search-box button { flex: 0 0 auto; min-width: 88px; }
 .pos-bill { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; }
 .pos-bill-header { padding: 16px; border-bottom: 1px solid var(--border); }
 .pos-bill-items { flex: 1; overflow-y: auto; padding: 12px; }

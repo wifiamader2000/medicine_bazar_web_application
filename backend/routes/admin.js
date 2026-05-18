@@ -1,11 +1,44 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const { authenticate, authorize, logAudit } = require('../middleware/auth');
 const { importUpload, logoUpload, mediaUpload } = require('../middleware/upload');
 const DataService = require('../services/DataService');
 const { parseProductImport, slugify } = require('../services/ProductImportService');
+const { parseBdMedicineDataset, SOURCE: BD_MEDICINE_SOURCE } = require('../services/BdMedicineImportService');
 const config = require('../config');
+
+function datasetStores() {
+  return {
+    products: DataService.get('products').findAll({}),
+    brands: DataService.get('brands').findAll({}),
+    manufacturers: DataService.get('manufacturers').findAll({}),
+    generics: DataService.get('generics').findAll({}),
+    indications: DataService.get('indications').findAll({}),
+    drugClasses: DataService.get('drugClasses').findAll({}),
+    dosageForms: DataService.get('dosageForms').findAll({}),
+  };
+}
+
+function importFilePath(importId) {
+  const safeName = path.basename(String(importId || ''));
+  return path.join(config.upload.dir, 'temp', safeName);
+}
+
+function normalizeImportFiles(files = []) {
+  return files.map(file => ({
+    path: file.path || importFilePath(file.importId),
+    filename: file.filename || file.importId,
+    originalname: file.originalname || file.sourceName || file.filename || file.importId,
+  })).filter(file => file.filename && fs.existsSync(file.path));
+}
+
+function createMany(storeName, items) {
+  if (!items || items.length === 0) return [];
+  return DataService.get(storeName).createMany(items);
+}
 
 router.get('/dashboard', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
@@ -119,14 +152,52 @@ router.delete('/brands/:id', authenticate, authorize('admin'), asyncHandler(asyn
   res.json({ success: true, message: 'Brand deleted' });
 }));
 
-router.post('/import/upload', authenticate, authorize('admin', 'manager'), importUpload.single('file'), asyncHandler(async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+router.post('/import/upload', authenticate, authorize('admin', 'manager'), importUpload.any(), asyncHandler(async (req, res) => {
+  const files = req.files || [];
+  if (files.length === 0) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+  const mode = req.body.mode || req.body.importMode || (files.length > 1 ? 'bd-medicine-dataset' : 'auto');
+  const looksLikeBdDataset = mode === 'bd-medicine-dataset' || files.some(file => /medicine|manufacturer|generic|indication|drug.?class|dosage.?form/i.test(file.originalname));
+
+  if (looksLikeBdDataset) {
+    const parsed = parseBdMedicineDataset(files, datasetStores());
+    return res.json({
+      success: true,
+      data: {
+        mode: 'bd-medicine-dataset',
+        source: BD_MEDICINE_SOURCE,
+        files: parsed.files,
+        totalRows: parsed.totalRows,
+        medicineRows: parsed.medicineRows,
+        validRows: parsed.newProducts.length + parsed.updateProducts.length,
+        invalidRows: parsed.invalidRows.length,
+        duplicates: parsed.duplicateRows.length,
+        newProducts: parsed.newProducts.length,
+        updateProducts: parsed.updateProducts.length,
+        entityCounts: {
+          manufacturers: parsed.createEntities.manufacturers.length,
+          generics: parsed.createEntities.generics.length,
+          indications: parsed.createEntities.indications.length,
+          drugClasses: parsed.createEntities.drugClasses.length,
+          dosageForms: parsed.createEntities.dosageForms.length,
+        },
+        preview: parsed.preview,
+        invalidDetails: parsed.invalidRows.slice(0, 50),
+        duplicateDetails: parsed.duplicateRows.slice(0, 50),
+        importFiles: parsed.files.map(file => ({ importId: file.importId, sourceName: file.sourceName, type: file.type })),
+        formatNote: 'bd-medicine-scraper/Kaggle-compatible CSV files are supported. Data is imported as reference information, not medical advice.',
+      },
+    });
+  }
+
+  const file = files[0];
   const existingProducts = DataService.get('products').findAll({});
-  const parsed = parseProductImport(req.file.path, req.file.originalname, existingProducts);
+  const parsed = parseProductImport(file.path, file.originalname, existingProducts);
 
   res.json({
     success: true,
     data: {
+      mode: 'legacy-product-csv',
       totalRows: parsed.rows.length,
       validRows: parsed.validRows.length,
       invalidRows: parsed.invalidRows.length,
@@ -135,23 +206,86 @@ router.post('/import/upload', authenticate, authorize('admin', 'manager'), impor
       preview: parsed.newProducts.slice(0, 25),
       invalidDetails: parsed.invalidRows.slice(0, 25),
       duplicateDetails: parsed.duplicates.slice(0, 25),
-      importId: req.file.filename,
-      sourceName: req.file.originalname,
+      importId: file.filename,
+      sourceName: file.originalname,
       formatNote: 'CSV and tab-delimited TXT are supported. Excel files are intentionally disabled in production.',
     },
   });
 }));
 
 router.post('/import/commit', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
-  const { importId, products: legacyProducts } = req.body;
+  const { importId, importFiles, mode, products: legacyProducts } = req.body;
   let products = legacyProducts;
   let invalidRows = [];
   let duplicates = [];
 
+  if (mode === 'bd-medicine-dataset' || Array.isArray(importFiles)) {
+    const files = normalizeImportFiles(importFiles || [{ importId }]);
+    if (files.length === 0) return res.status(400).json({ success: false, message: 'No import files found. Preview the CSV files again.' });
+    const parsed = parseBdMedicineDataset(files, datasetStores());
+    const createdProducts = parsed.newProducts.length ? DataService.get('products').createMany(parsed.newProducts) : [];
+    const oldProducts = [];
+    let updatedCount = 0;
+    for (const item of parsed.updateProducts) {
+      const existing = DataService.get('products').findById(item.id);
+      if (existing) oldProducts.push(existing);
+      if (DataService.get('products').update(item.id, item.data)) updatedCount++;
+    }
+
+    const createdEntities = {
+      manufacturers: createMany('manufacturers', parsed.createEntities.manufacturers),
+      brands: createMany('brands', parsed.createEntities.brands),
+      generics: createMany('generics', parsed.createEntities.generics),
+      indications: createMany('indications', parsed.createEntities.indications),
+      drugClasses: createMany('drugClasses', parsed.createEntities.drugClasses),
+      dosageForms: createMany('dosageForms', parsed.createEntities.dosageForms),
+    };
+
+    const createdEntityIds = Object.fromEntries(Object.entries(createdEntities).map(([key, items]) => [key, items.map(item => item.id)]));
+    const history = DataService.get('importHistory').create({
+      mode: 'bd-medicine-dataset',
+      source: BD_MEDICINE_SOURCE,
+      files: parsed.files,
+      count: createdProducts.length,
+      updatedCount,
+      failedRows: parsed.invalidRows.length,
+      duplicates: parsed.duplicateRows.length,
+      importedBy: req.user.email,
+      productIds: createdProducts.map(p => p.id),
+      updatedProductIds: parsed.updateProducts.map(item => item.id),
+      oldProducts,
+      createdEntityIds,
+      entityCounts: Object.fromEntries(Object.entries(createdEntities).map(([key, items]) => [key, items.length])),
+      rollbackSafe: true,
+      rolledBack: false,
+    });
+
+    logAudit(req, 'bd_medicine_dataset_import', {
+      importHistoryId: history.id,
+      createdProducts: createdProducts.length,
+      updatedProducts: updatedCount,
+      failedRows: parsed.invalidRows.length,
+      duplicates: parsed.duplicateRows.length,
+      source: BD_MEDICINE_SOURCE,
+    });
+
+    return res.json({
+      success: true,
+      message: `${createdProducts.length} products imported, ${updatedCount} updated`,
+      data: {
+        importHistoryId: history.id,
+        count: createdProducts.length,
+        updatedCount,
+        failedRows: parsed.invalidRows.length,
+        duplicates: parsed.duplicateRows.length,
+        entityCounts: history.entityCounts,
+        source: BD_MEDICINE_SOURCE,
+      },
+    });
+  }
+
   if (importId) {
-    const fs = require('fs');
-    const path = require('path');
-    const importPath = path.join(config.upload.dir, 'temp', importId);
+    const importPath = importFilePath(importId);
     if (fs.existsSync(importPath)) {
       const existingProducts = DataService.get('products').findAll({});
       const parsed = parseProductImport(importPath, importId, existingProducts);
@@ -185,11 +319,15 @@ router.post('/import/commit', authenticate, authorize('admin', 'manager'), async
 
   DataService.get('importHistory').create({
     importId,
+    mode: 'legacy-product-csv',
+    source: 'catalog-import',
     count: imported.length,
     failedRows: invalidRows.length,
     duplicates: duplicates.length,
     importedBy: req.user.email,
     productIds: imported.map(p => p.id),
+    rollbackSafe: true,
+    rolledBack: false,
   });
 
   logAudit(req, 'product_import', { count: imported.length, importId });
@@ -202,8 +340,67 @@ router.get('/import/history', authenticate, authorize('admin', 'manager'), async
   res.json({ success: true, data: history });
 }));
 
+router.get('/import/stats', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const products = DataService.get('products').findAll({});
+  const sourceProducts = products.filter(p => p.source === BD_MEDICINE_SOURCE || p.importedSource === BD_MEDICINE_SOURCE);
+  res.json({
+    success: true,
+    data: {
+      importedMedicines: sourceProducts.length,
+      manufacturers: DataService.get('manufacturers').count(),
+      generics: DataService.get('generics').count(),
+      indications: DataService.get('indications').count(),
+      drugClasses: DataService.get('drugClasses').count(),
+      dosageForms: DataService.get('dosageForms').count(),
+      source: BD_MEDICINE_SOURCE,
+    },
+  });
+}));
+
+router.post('/import/:id/rollback', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+  const history = DataService.get('importHistory').findById(req.params.id);
+  if (!history || !history.rollbackSafe || history.rolledBack) {
+    return res.status(400).json({ success: false, message: 'Import cannot be rolled back safely' });
+  }
+
+  let deletedProducts = 0;
+  for (const productId of history.productIds || []) {
+    if (DataService.get('products').delete(productId)) deletedProducts++;
+  }
+
+  let restoredProducts = 0;
+  for (const product of history.oldProducts || []) {
+    if (DataService.get('products').update(product.id, product)) restoredProducts++;
+  }
+
+  const deletedEntities = {};
+  for (const [storeName, ids] of Object.entries(history.createdEntityIds || {})) {
+    deletedEntities[storeName] = 0;
+    const actualStore = storeName === 'drugClasses' ? 'drugClasses' : storeName;
+    if (!DataService.getStoreNames().includes(actualStore)) continue;
+    for (const id of ids || []) {
+      if (DataService.get(actualStore).delete(id)) deletedEntities[storeName]++;
+    }
+  }
+
+  DataService.get('importHistory').update(history.id, {
+    rolledBack: true,
+    rolledBackAt: new Date().toISOString(),
+    rolledBackBy: req.user.email,
+  });
+  logAudit(req, 'import_rollback', { importHistoryId: history.id, deletedProducts, restoredProducts });
+  res.json({ success: true, data: { deletedProducts, restoredProducts, deletedEntities } });
+}));
+
 router.get('/users', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
-  const users = DataService.get('users').findAll({}).map(({ password, ...u }) => u);
+  const users = DataService.get('users').findAll({}).map(({
+    password,
+    resetPasswordTokenHash,
+    resetPasswordExpiresAt,
+    resetPasswordRequestedAt,
+    resetPasswordUsedAt,
+    ...u
+  }) => u);
   res.json({ success: true, data: users });
 }));
 
@@ -342,6 +539,42 @@ router.put('/banners/:id', authenticate, authorize('admin', 'manager'), asyncHan
 router.delete('/banners/:id', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
   DataService.get('banners').delete(req.params.id);
   res.json({ success: true, message: 'Banner deleted' });
+}));
+
+router.get('/campaigns', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const campaigns = DataService.get('campaigns').findAll({});
+  campaigns.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  res.json({ success: true, data: campaigns });
+}));
+
+router.post('/campaigns', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const { title, titleBn, type, startDate, endDate, discountPercent, bannerUrl, active = true } = req.body;
+  if (!title) return res.status(400).json({ success: false, message: 'Campaign title required' });
+  const campaign = DataService.get('campaigns').create({
+    title,
+    titleBn: titleBn || '',
+    type: type || 'general',
+    startDate: startDate || null,
+    endDate: endDate || null,
+    discountPercent: Number(discountPercent || 0),
+    bannerUrl: bannerUrl || '',
+    active: active !== false,
+  });
+  logAudit(req, 'campaign_created', { campaignId: campaign.id, title: campaign.title });
+  res.status(201).json({ success: true, data: campaign });
+}));
+
+router.put('/campaigns/:id', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  const updated = DataService.get('campaigns').update(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ success: false, message: 'Campaign not found' });
+  logAudit(req, 'campaign_updated', { campaignId: req.params.id });
+  res.json({ success: true, data: updated });
+}));
+
+router.delete('/campaigns/:id', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+  DataService.get('campaigns').delete(req.params.id);
+  logAudit(req, 'campaign_deleted', { campaignId: req.params.id });
+  res.json({ success: true, message: 'Campaign deleted' });
 }));
 
 router.get('/coupons', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {

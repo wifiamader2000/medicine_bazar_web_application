@@ -1,0 +1,4 @@
+brand name,medicine type,generic,strength,manufacturer,package container,unit price,package size
+Sample Napa QA,Tablet,Sample Paracetamol,500mg,Sample Pharma Ltd,Strip,1.50,10 tablets
+Sample Bad Row,Tablet,,500mg,Sample Pharma Ltd,Strip,,
+,Tablet,Sample Paracetamol,500mg,Sample Pharma Ltd,Strip,1.50,10 tablets

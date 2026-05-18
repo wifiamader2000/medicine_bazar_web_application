@@ -1,13 +1,44 @@
-<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Search - Medicine Bazar</title><link rel="icon" href="/assets/images/medicine-placeholder.svg"><link rel="stylesheet" href="/css/style.css"></head><body>
-<div data-mb-header></div>
-<main class="section"><div class="container">
-  <div class="section-header"><div><h1 class="section-title" id="search-title">Search Medicines</h1><p class="section-subtitle">Search by name, Bangla name, generic, company, category, strength, SKU, barcode, aliases and symptoms.</p></div></div>
-  <div class="card" style="margin-bottom:20px;"><div style="display:flex;gap:12px;flex-wrap:wrap;"><select id="filter-sort" class="form-control" style="max-width:220px;"><option value="">Relevant</option><option value="sellingPrice:asc">Price Low-High</option><option value="sellingPrice:desc">Price High-Low</option><option value="name:asc">Name A-Z</option></select><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="filter-stock"> In Stock</label><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="filter-rx"> Rx Required</label></div></div>
-  <div id="search-results" class="products-grid"><div class="empty-state"><h3>Type a medicine name to search</h3></div></div><div id="no-result-help" style="margin-top:20px;"></div><div id="pagination" class="pagination"></div>
-</div></main>
-<div data-mb-footer></div>
-<script src="/js/components.js"></script><script>MB_COMPONENTS.mount('shop');</script><script src="/js/app.js"></script>
-<script>
-const params=new URLSearchParams(location.search);const q=params.get('q')||'';async function runSearch(page=1){if(!q)return;document.getElementById('search-input').value=q;document.getElementById('search-title').textContent=`Search: "${q}"`;const sort=document.getElementById('filter-sort').value,inStock=document.getElementById('filter-stock').checked,rx=document.getElementById('filter-rx').checked;let url=`/search/products?q=${encodeURIComponent(q)}&page=${page}&limit=20`;if(sort)url+=`&sort=${encodeURIComponent(sort)}`;if(inStock)url+='&inStock=true';if(rx)url+='&prescriptionRequired=true';const res=await MB.get(url);document.getElementById('search-results').innerHTML=res.success&&res.data.length?res.data.map(p=>MB.productCardHTML(p)).join(''):`<div class="empty-state"><h3>No results for "${q}"</h3><p>Try Napa, Paracetamol, fever, diabetes, cough or browse categories.</p></div>`;document.getElementById('no-result-help').innerHTML=!res.data?.length?'<div class="alert alert-info">No-result searches are logged for admin review so inventory gaps can be improved.</div>':'';const pages=res.pagination?.totalPages||0;document.getElementById('pagination').innerHTML=Array.from({length:pages},(_,i)=>`<button class="${i+1===page?'active':''}" onclick="runSearch(${i+1})">${i+1}</button>`).join('');}
-document.addEventListener('DOMContentLoaded',()=>{['filter-sort','filter-stock','filter-rx'].forEach(id=>document.getElementById(id).addEventListener('change',()=>runSearch(1)));runSearch();});
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search - Medicine Bazar</title>
+  <link rel="icon" href="/assets/images/medicine-placeholder.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <header class="header">
+    <div class="header-top"><div class="container"><div><span data-en="Need Help?" data-bn="সাহায্য দরকার?">Need Help?</span> <a href="tel:01602444532">01602444532</a></div><div style="display:flex;align-items:center;gap:16px;"><div class="lang-switch"><button data-lang="en" class="active">EN</button><button data-lang="bn">বাং</button></div></div></div></div>
+    <div class="header-main"><div class="container">
+      <a href="/" class="logo"><img src="/assets/images/medicine-placeholder.svg" alt="Medicine Bazar"><div class="logo-text"><span data-en="Medicine Bazar" data-bn="মেডিসিন বাজার">Medicine Bazar</span><small data-en="Your Trusted Pharmacy" data-bn="আপনার বিশ্বস্ত ফার্মেসি">Your Trusted Pharmacy</small></div></a>
+      <div class="search-bar"><input type="text" id="search-input" placeholder="Search medicines..."><button onclick="document.getElementById('search-input').value&&(window.location.href='/search?q='+encodeURIComponent(document.getElementById('search-input').value))">&#128269;</button><div id="search-suggestions" class="search-suggestions"></div></div>
+      <div class="header-actions"><div id="auth-area"></div><a href="/cart" class="header-btn"><span class="icon">&#128722;</span><span>Cart</span><span class="cart-count" style="display:none">0</span></a><button class="mobile-menu-btn">&#9776;</button></div>
+    </div></div>
+    <nav class="header-nav"><div class="container"><a href="/" class="nav-link">Home</a><a href="/shop" class="nav-link">Shop</a><a href="/prescription-upload" class="nav-link">Upload Prescription</a><a href="/lab-tests" class="nav-link">Lab Tests</a><a href="/blog" class="nav-link">Health Blog</a><a href="/about" class="nav-link">About</a><a href="/contact" class="nav-link">Contact</a></div></nav>
+  </header>
+  
+  <section class="section"><div class="container">
+    <h2 class="section-title" id="search-title">Search Results</h2>
+    <div id="search-results" class="products-grid"><div class="empty-state"><h3>Enter a search term to find medicines</h3></div></div>
+    <div id="pagination" class="pagination"></div>
+  </div></section>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-col"><h3>Medicine Bazar</h3><p>Your trusted pharmacy partner.</p><div class="footer-social"><a href="https://facebook.com/medicinebazar24" target="_blank">f</a><a href="https://www.youtube.com/@MedicineBazar24" target="_blank">&#9654;</a><a href="https://wa.me/8801602444532" target="_blank">W</a></div></div><div class="footer-col"><h3>Quick Links</h3><a href="/shop">Shop</a><a href="/prescription-upload">Upload Prescription</a><a href="/lab-tests">Lab Tests</a><a href="/blog">Health Blog</a></div><div class="footer-col"><h3>Policies</h3><a href="/about">About Us</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a><a href="/return">Return Policy</a><a href="/shipping-policy">Shipping Policy</a><a href="/faq">FAQ</a></div><div class="footer-col"><h3>Contact</h3><p>&#128222; 01602444532</p><p><a href="https://wa.me/8801602444532" target="_blank" style="color:rgba(255,255,255,0.7);">WhatsApp</a></p></div></div></div><div class="footer-bottom"><div class="container">&copy; 2024 Medicine Bazar. All rights reserved.</div></div><div class="footer-disclaimer"><div class="container">Disclaimer: Always consult your doctor before taking any medicine.</div></div></footer>
+  <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank">&#128172;</a></div>
+  <script src="/js/app.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (!q) return;
+    document.getElementById('search-input').value = q;
+    document.getElementById('search-title').textContent = 'Search: "' + q + '"';
+    const res = await MB.get('/search/products?q=' + encodeURIComponent(q) + '&limit=40');
+    if (res.success) {
+      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No results found for "' + q + '"</h3><p>Try different keywords or browse categories</p></div>';
+    }
+  });
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@ import PaymentMethodCard from '../../components/payment/PaymentMethodCard';
 import ManualPaymentForm from '../../components/payment/ManualPaymentForm';
 
 function normalizePaymentMethods(methods) {
-  return Object.entries(methods || {})
+  const normalized = Object.entries(methods || {})
     .filter(([, method]) => method?.available)
     .map(([id, method]) => ({
       id,
@@ -18,7 +18,28 @@ function normalizePaymentMethods(methods) {
       number: method.number,
       link: method.url,
       type: method.type || (id === 'cod' ? 'cod' : 'manual'),
+      disabled: false
     }));
+    
+  // Add Future Digital Payment Placeholders
+  normalized.push(
+    {
+      id: 'sslcommerz_future',
+      name: 'Credit/Debit Cards (SSLCommerz)',
+      description: 'Coming Soon: Automated Digital Payments',
+      type: 'placeholder',
+      disabled: true
+    },
+    {
+      id: 'bkash_automated_future',
+      name: 'bKash Auto (Tokenized)',
+      description: 'Coming Soon: Instant 1-Click Verification',
+      type: 'placeholder',
+      disabled: true
+    }
+  );
+  
+  return normalized;
 }
 
 const Checkout = () => {
@@ -208,8 +229,8 @@ const Checkout = () => {
               {paymentMethods.map((method) => (
                 <div 
                   key={method.id} 
-                  onClick={() => setPaymentMethod(method.id)}
-                  className={`cursor-pointer rounded-xl p-4 border transition-all ${paymentMethod === method.id ? 'bg-primary/5 border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                  onClick={() => !method.disabled && setPaymentMethod(method.id)}
+                  className={`rounded-xl p-4 border transition-all ${method.disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-gray-300'} ${paymentMethod === method.id ? 'bg-primary/5 border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'bg-white border-gray-200'}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === method.id ? 'border-primary' : 'border-gray-300'}`}>

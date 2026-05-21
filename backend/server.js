@@ -134,6 +134,8 @@ app.use('/api/v1/lab-tests', require('./routes/labTests'));
 app.use('/api/v1/pharmacy', require('./routes/pharmacy'));
 app.use('/api/v1/blogs', require('./routes/blogs'));
 app.use('/api/v1/reports', require('./routes/reports'));
+app.use('/api/v1/erp', require('./routes/erp'));
+app.use('/api/v1/banners', require('./routes/banners'));
 app.use('/api/v1', require('./routes/public'));
 
 // Page routes - serve HTML pages

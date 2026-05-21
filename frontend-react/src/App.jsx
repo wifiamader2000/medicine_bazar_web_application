@@ -27,6 +27,9 @@ import Dashboard from './pages/customer/Dashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProductsManager from './pages/admin/ProductsManager';
 import ProductImport from './pages/admin/ProductImport';
+import ERPDashboard from './pages/admin/ERPDashboard';
+import BannerManager from './pages/admin/BannerManager';
+import InventoryManager from './pages/admin/InventoryManager';
 
 import Settings from './pages/admin/Settings';
 
@@ -61,6 +64,9 @@ const App = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<ProductsManager />} />
           <Route path="import" element={<ProductImport />} />
+          <Route path="erp" element={<ERPDashboard />} />
+          <Route path="banners" element={<BannerManager />} />
+          <Route path="inventory" element={<InventoryManager />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

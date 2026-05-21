@@ -10,6 +10,7 @@ const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [prescriptionMeds, setPrescriptionMeds] = useState([]);
+  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -17,11 +18,18 @@ const Home = () => {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const response = await api.get('/products?limit=20');
-        const items = response.data?.data || response.data || [];
+        const [productsRes, bannersRes] = await Promise.all([
+          api.get('/products?limit=20').catch(() => ({ data: [] })),
+          api.get('/banners').catch(() => ({ data: { banners: [] } }))
+        ]);
+        
+        const items = productsRes.data?.data || productsRes.data || [];
         setFeaturedProducts(items.slice(0, 8));
         setBestSellers(items.slice(8, 14));
         setPrescriptionMeds(items.slice(14, 20));
+        
+        const fetchedBanners = bannersRes.data?.banners || [];
+        setBanners(fetchedBanners);
       } catch (err) {
         console.error('Error fetching products:', err);
       } finally {
@@ -89,6 +97,30 @@ const Home = () => {
           </p>
         </div>
       </section>
+
+      {/* 1.5 Dynamic Banners */}
+      {banners.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {banners.map((banner, index) => (
+            <a 
+              key={banner.id || index} 
+              href={banner.link || '#'} 
+              className="block rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group"
+            >
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors z-10 rounded-2xl"></div>
+              <img 
+                src={banner.imageUrl} 
+                alt={banner.title} 
+                className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <div className="absolute bottom-4 left-4 z-20">
+                <h3 className="text-white font-bold text-lg drop-shadow-md">{banner.title}</h3>
+              </div>
+            </a>
+          ))}
+        </section>
+      )}
 
       {/* 2 & 3. Upload Prescription & WhatsApp CTAs */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">

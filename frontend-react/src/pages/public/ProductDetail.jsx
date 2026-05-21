@@ -6,6 +6,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Loading from '../../components/common/Loading';
 import ErrorState from '../../components/common/ErrorState';
+import ProductImage from '../../components/product/ProductImage';
 import {
   addProductToCart,
   formatPrice,
@@ -60,9 +61,9 @@ const ProductDetail = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'uses', label: 'Uses' },
+    { id: 'uses', label: 'Uses & Dosage' },
     { id: 'side_effects', label: 'Side Effects' },
-    { id: 'warnings', label: 'Warnings' },
+    { id: 'warnings', label: 'Warnings & Precautions' },
   ];
   const requiresPrescription = productRequiresPrescription(product);
   const inStock = (product.stockQuantity || 0) > 0;
@@ -76,12 +77,7 @@ const ProductDetail = () => {
               <Badge variant="alert">Rx Required</Badge>
             </div>
           )}
-          <img
-            src={productImage(product)}
-            alt={product.name}
-            className="max-w-full max-h-[400px] object-contain mix-blend-multiply"
-            onError={(event) => { event.currentTarget.src = '/favicon.svg'; }}
-          />
+          <ProductImage product={product} className="w-full max-w-sm aspect-square mix-blend-multiply" />
         </div>
 
         <div className="flex flex-col">
@@ -167,15 +163,47 @@ const ProductDetail = () => {
                 <Info className="text-yellow-600 shrink-0" size={20} />
                 <p className="text-yellow-800">
                   <strong className="block mb-1">Medical Disclaimer</strong>
-                  This information is for general knowledge only. Do not take medicine without consulting a physician.
+                  {product.disclaimer || 'এই তথ্য শুধুমাত্র সাধারণ জ্ঞানের জন্য। চিকিৎসকের পরামর্শ ছাড়া ওষুধ সেবন করবেন না।'}
                 </p>
               </div>
             </div>
           )}
 
-          {activeTab === 'uses' && <p>{product.uses || product.indication || product.indications || 'Information not available.'}</p>}
-          {activeTab === 'side_effects' && <p>{product.sideEffects || 'Information not available.'}</p>}
-          {activeTab === 'warnings' && <p>{product.warning || product.warnings || 'Information not available.'}</p>}
+          {activeTab === 'uses' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Uses</h3>
+                <p>{product.uses || product.indication || product.indications || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Dosage</h3>
+                <p>{product.dosage || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'side_effects' && (
+            <div className="space-y-4">
+              <p>{product.sideEffects || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+            </div>
+          )}
+          
+          {activeTab === 'warnings' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Warnings</h3>
+                <p>{product.warning || product.warnings || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Precautions</h3>
+                <p>{product.precautions || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Pregnancy & Lactation</h3>
+                <p>{product.pregnancyWarning || product.lactationWarning || 'এই তথ্য এখনো যোগ করা হয়নি। ব্যবহারের আগে চিকিৎসক বা ফার্মাসিস্টের পরামর্শ নিন।'}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

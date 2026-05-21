@@ -51,6 +51,7 @@ const stores = {
   searchLogs: new StoreClass('mb_search_logs.json'),
   addresses: new StoreClass('mb_addresses.json'),
   wishlist: new StoreClass('mb_wishlist.json'),
+  transactions: new StoreClass('mb_transactions.json'),
 };
 
 class DataService {

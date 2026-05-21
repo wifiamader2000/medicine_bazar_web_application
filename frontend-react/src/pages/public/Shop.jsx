@@ -7,12 +7,14 @@ import Loading from '../../components/common/Loading';
 import ErrorState from '../../components/common/ErrorState';
 import { unwrapData } from '../../utils/apiData';
 import { useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { language, t } = useLanguage();
   
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
@@ -100,9 +102,9 @@ const Shop = () => {
       
       {/* Mobile Filter Toggle */}
       <div className="md:hidden flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <h1 className="text-lg font-bold text-gray-900">Shop</h1>
+        <h1 className="text-lg font-bold text-gray-900">{t('common.shop')}</h1>
         <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2">
-          <Filter size={18} /> Filters
+          <Filter size={18} /> {language === 'en' ? 'Filters' : 'ফিল্টারসমূহ'}
         </Button>
       </div>
 
@@ -111,13 +113,13 @@ const Shop = () => {
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm sticky top-24">
           <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100 text-gray-900 font-bold text-lg">
             <SlidersHorizontal size={20} />
-            Filters
+            {language === 'en' ? 'Filters' : 'ফিল্টারসমূহ'}
           </div>
           
           <div className="mb-6 relative">
             <input 
               type="text" 
-              placeholder="Search products..." 
+              placeholder={t('common.searchPlaceholder')} 
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -126,7 +128,7 @@ const Shop = () => {
           </div>
 
           <div className="mb-6">
-            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">Categories</h4>
+            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">{language === 'en' ? 'Categories' : 'ক্যাটাগরি সমূহ'}</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
@@ -136,7 +138,7 @@ const Shop = () => {
                   onChange={() => handleFilterChange('category', '')}
                   className="text-primary focus:ring-primary" 
                 />
-                <span className="text-gray-700 text-sm">All Categories</span>
+                <span className="text-gray-700 text-sm">{language === 'en' ? 'All Categories' : 'সব ক্যাটাগরি'}</span>
               </label>
               {categories.map(cat => (
                 <label key={cat.id || cat._id} className="flex items-center gap-2 cursor-pointer">
@@ -147,14 +149,14 @@ const Shop = () => {
                     onChange={() => handleFilterChange('category', cat.slug || cat.name)}
                     className="text-primary focus:ring-primary" 
                   />
-                  <span className="text-gray-700 text-sm">{cat.name}</span>
+                  <span className="text-gray-700 text-sm">{language === 'bn' && cat.nameBn ? cat.nameBn : cat.name}</span>
                 </label>
               ))}
             </div>
           </div>
           
           <div className="mb-6">
-            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">Prescription</h4>
+            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">{language === 'en' ? 'Prescription' : 'প্রেসক্রিপশন'}</h4>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
@@ -164,7 +166,7 @@ const Shop = () => {
                   onChange={() => handleFilterChange('prescriptionRequired', '')}
                   className="text-primary focus:ring-primary" 
                 />
-                <span className="text-gray-700 text-sm">All Products</span>
+                <span className="text-gray-700 text-sm">{language === 'en' ? 'All Products' : 'সব পণ্য'}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
@@ -174,7 +176,7 @@ const Shop = () => {
                   onChange={() => handleFilterChange('prescriptionRequired', 'true')}
                   className="text-primary focus:ring-primary" 
                 />
-                <span className="text-gray-700 text-sm">Rx Required</span>
+                <span className="text-gray-700 text-sm">{t('common.rxRequired')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
@@ -184,13 +186,13 @@ const Shop = () => {
                   onChange={() => handleFilterChange('prescriptionRequired', 'false')}
                   className="text-primary focus:ring-primary" 
                 />
-                <span className="text-gray-700 text-sm">Non-Rx (OTC)</span>
+                <span className="text-gray-700 text-sm">{language === 'en' ? 'Non-Rx (OTC)' : 'ওটিসি (OTC) মেডিসিন'}</span>
               </label>
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">Availability</h4>
+            <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">{language === 'en' ? 'Availability' : 'সহজলভ্যতা'}</h4>
             <label className="flex items-center gap-2 cursor-pointer">
               <input 
                 type="checkbox" 
@@ -198,7 +200,7 @@ const Shop = () => {
                 onChange={(e) => handleFilterChange('inStock', e.target.checked)}
                 className="rounded text-primary focus:ring-primary" 
               />
-              <span className="text-gray-700 text-sm">In Stock Only</span>
+              <span className="text-gray-700 text-sm">{language === 'en' ? 'In Stock Only' : 'শুধু স্টকে আছে'}</span>
             </label>
           </div>
           
@@ -211,7 +213,7 @@ const Shop = () => {
                   setPagination({ page: 1, totalPages: 1 });
                 }}
              >
-               Reset Filters
+               {language === 'en' ? 'Reset Filters' : 'ফিল্টার রিসেট'}
              </Button>
           </div>
         </div>
@@ -221,35 +223,35 @@ const Shop = () => {
       <main className="flex-1">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 hidden md:flex">
           <h1 className="text-xl font-bold text-gray-900">
-            {filters.category ? filters.category : 'All Products'}
+            {filters.category ? filters.category : (language === 'en' ? 'All Products' : 'সব পণ্য')}
             {filters.search && ` matching "${filters.search}"`}
           </h1>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 font-medium">Sort by:</span>
+            <span className="text-sm text-gray-500 font-medium">{language === 'en' ? 'Sort by:' : 'ক্রম সাজান:'}</span>
             <select 
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
-              className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-primary text-gray-700"
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-primary text-gray-700 cursor-pointer"
             >
-              <option value="">Relevance</option>
-              <option value="sellingPrice:asc">Price: Low to High</option>
-              <option value="sellingPrice:desc">Price: High to Low</option>
-              <option value="name:asc">Name: A to Z</option>
+              <option value="">{language === 'en' ? 'Relevance' : 'প্রাসঙ্গিকতা'}</option>
+              <option value="sellingPrice:asc">{language === 'en' ? 'Price: Low to High' : 'মূল্য: কম থেকে বেশি'}</option>
+              <option value="sellingPrice:desc">{language === 'en' ? 'Price: High to Low' : 'মূল্য: বেশি থেকে কম'}</option>
+              <option value="name:asc">{language === 'en' ? 'Name: A to Z' : 'নাম: এ থেকে জেড'}</option>
             </select>
           </div>
         </div>
         
         {/* Mobile sorting (visible only on mobile) */}
         <div className="md:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-4">
-          <span className="text-sm text-gray-500 font-medium">Sort:</span>
+          <span className="text-sm text-gray-500 font-medium">{language === 'en' ? 'Sort:' : 'ক্রম:'}</span>
           <select 
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
               className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-primary bg-transparent"
             >
-              <option value="">Relevance</option>
-              <option value="sellingPrice:asc">Low to High</option>
-              <option value="sellingPrice:desc">High to Low</option>
+              <option value="">{language === 'en' ? 'Relevance' : 'প্রাসঙ্গিকতা'}</option>
+              <option value="sellingPrice:asc">{language === 'en' ? 'Low to High' : 'কম থেকে বেশি'}</option>
+              <option value="sellingPrice:desc">{language === 'en' ? 'High to Low' : 'বেশি থেকে কম'}</option>
             </select>
         </div>
 
@@ -257,8 +259,8 @@ const Shop = () => {
           <ErrorState message={error} />
         ) : products.length === 0 && !loading ? (
           <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your filters or search term.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{language === 'en' ? 'No products found' : 'কোনো পণ্য পাওয়া যায়নি'}</h3>
+            <p className="text-gray-500">{language === 'en' ? 'Try adjusting your filters or search term.' : 'অনুগ্রহ করে আপনার ফিল্টার বা অনুসন্ধান শব্দ পরিবর্তন করুন।'}</p>
           </div>
         ) : (
           <>
@@ -273,7 +275,7 @@ const Shop = () => {
                   className="px-8" 
                   onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                 >
-                  Load More
+                  {t('home.viewMore')}
                 </Button>
               </div>
             )}

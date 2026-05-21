@@ -6,7 +6,7 @@ const { paymentProofUpload } = require('../middleware/upload');
 const DataService = require('../services/DataService');
 
 router.post('/', authenticate, asyncHandler(async (req, res) => {
-  const { items, shippingAddress, paymentMethod, transactionId, couponCode, note } = req.body;
+  const { items, shippingAddress, paymentMethod, transactionId, couponCode, note, prescriptionId } = req.body;
   if (!items || items.length === 0) {
     return res.status(400).json({ success: false, message: 'Cart is empty', messageBn: 'কার্ট খালি' });
   }
@@ -80,6 +80,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending_verification',
     orderStatus: 'pending',
     note: note || '',
+    prescriptionId: prescriptionId || null,
     statusHistory: [{ status: 'pending', timestamp: new Date().toISOString(), note: 'Order placed' }],
   });
 

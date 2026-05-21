@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Truck, CreditCard } from 'lucide-react';
+import { ShieldCheck, Truck, CreditCard, Upload } from 'lucide-react';
 import api from '../../services/api';
-import { formatPrice, productPrice, readCart, unwrapData } from '../../utils/apiData';
+import { formatPrice, productPrice, readCart, unwrapData, productRequiresPrescription } from '../../utils/apiData';
 import { getStoredUser } from '../../utils/auth';
 import Button from '../../components/common/Button';
 import PaymentMethodCard from '../../components/payment/PaymentMethodCard';
 import ManualPaymentForm from '../../components/payment/ManualPaymentForm';
+import { useLanguage } from '../../context/LanguageContext';
+import Badge from '../../components/common/Badge';
 
 function normalizePaymentMethods(methods) {
   const normalized = Object.entries(methods || {})
@@ -44,6 +46,7 @@ function normalizePaymentMethods(methods) {
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
   const { token, user } = getStoredUser();
   const [cart, setCart] = useState(readCart);
   const [products, setProducts] = useState([]);
@@ -51,6 +54,8 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [transactionId, setTransactionId] = useState('');
   const [proofFile, setProofFile] = useState(null);
+  const [prescriptionFile, setPrescriptionFile] = useState(null);
+  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -106,6 +111,8 @@ const Checkout = () => {
     });
   };
 
+  const cartRequiresPrescription = products.some((p) => productRequiresPrescription(p));
+
   const placeOrder = async (event) => {
     event.preventDefault();
     setError('');
@@ -119,15 +126,45 @@ const Checkout = () => {
       return;
     }
 
+    if (cartRequiresPrescription && !prescriptionFile) {
+      setError(language === 'en' ? 'Prescription file is required for prescription-only medicines.' : 'প্রেসক্রিপশন-অনলি ওষুধের জন্য প্রেসক্রিপশন ফাইল আপলোড করা আবশ্যক।');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      let prescriptionId = null;
+
+      if (cartRequiresPrescription && prescriptionFile) {
+        setPrescriptionUploading(true);
+        const formData = new FormData();
+        formData.append('prescription', prescriptionFile);
+        formData.append('patientName', shippingAddress.name);
+        formData.append('note', 'Uploaded during checkout');
+        
+        try {
+          const uploadRes = await api.post('/prescriptions/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          const uploadDataObj = unwrapData(uploadRes);
+          prescriptionId = uploadDataObj.id;
+        } catch (uploadErr) {
+          setError(language === 'en' ? 'Failed to upload prescription. Please try again.' : 'প্রেসক্রিপশন আপলোড করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
+          setLoading(false);
+          setPrescriptionUploading(false);
+          return;
+        }
+        setPrescriptionUploading(false);
+      }
+
       const response = await api.post('/orders', {
         items: cart,
         shippingAddress,
         paymentMethod,
         transactionId: isManualPayment ? transactionId.trim() : null,
         note: isManualPayment ? 'Manual payment submitted. Payment must be verified by admin.' : '',
+        prescriptionId: prescriptionId || null,
       });
 
       const order = unwrapData(response);
@@ -137,12 +174,11 @@ const Checkout = () => {
 
       localStorage.removeItem('cart');
       setCart([]);
-      navigate('/account', {
+      navigate(`/order-success?id=${order.id || order._id || order.orderNumber}`, {
         state: {
-          orderPlaced: true,
-          orderNumber: order?.orderNumber,
-          paymentStatus: order?.paymentStatus || (isManualPayment ? 'pending_verification' : 'cod'),
-        },
+          order,
+          prescriptionUploaded: !!prescriptionId,
+        }
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order or upload proof. Manual payments remain pending until admin verification.');
@@ -217,6 +253,61 @@ const Checkout = () => {
               </div>
             </div>
           </section>
+
+          {/* Step 1.5: Prescription Upload */}
+          {cartRequiresPrescription && (
+            <section className="bg-amber-50/50 border border-amber-200 rounded-xl p-6 sm:p-8 space-y-4">
+              <h2 className="text-xl font-bold text-amber-900 flex items-center gap-3">
+                <Upload className="text-amber-600" size={24} />
+                {language === 'en' ? 'Prescription Upload Required' : 'প্রেসক্রিপশন আপলোড আবশ্যক'}
+                <Badge className="ml-2 bg-amber-200 text-amber-800 border-none px-2 py-0.5 rounded text-xs font-semibold">
+                  {language === 'en' ? 'Required' : 'আবশ্যক'}
+                </Badge>
+              </h2>
+              <p className="text-sm text-amber-700 font-medium">
+                {language === 'en' 
+                  ? 'Your order contains prescription-only medicine(s). A valid prescription is legally required before we can dispatch your items.' 
+                  : 'আপনার অর্ডারে প্রেসক্রিপশন-অনলি ওষুধ রয়েছে। ওষুধ প্রেরণের পূর্বে একটি বৈধ প্রেসক্রিপশন আপলোড করা আইনগতভাবে বাধ্যতামূলক।'}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-6 bg-white border border-amber-200 border-dashed rounded-lg justify-center text-center">
+                <input
+                  type="file"
+                  id="prescription-file-input"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  className="hidden"
+                  onChange={(e) => setPrescriptionFile(e.target.files[0])}
+                />
+                <label
+                  htmlFor="prescription-file-input"
+                  className="cursor-pointer bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2 shadow-sm"
+                >
+                  <Upload size={18} />
+                  {language === 'en' ? 'Select Prescription' : 'প্রেসক্রিপশন নির্বাচন করুন'}
+                </label>
+                <div className="text-left">
+                  {prescriptionFile ? (
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 max-w-[250px] truncate">
+                        {prescriptionFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {(prescriptionFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">
+                        {language === 'en' ? 'No file chosen' : 'কোনো ফাইল নির্বাচন করা হয়নি'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {language === 'en' ? 'Supported: JPG, PNG, PDF (Max 5MB)' : 'সমর্থিত: JPG, PNG, PDF (সর্বোচ্চ ৫ মেগাবাইট)'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Step 2: Payment Method */}
           <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">

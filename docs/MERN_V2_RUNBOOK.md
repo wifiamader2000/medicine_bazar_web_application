@@ -102,3 +102,75 @@ server {
 ### Option B: Serve statically via Express (Optional/Alternative)
 
 If you configure `backend/server.js` to serve static files from `frontend-react/dist/`, simply running `npm run start:api` in production will serve both the API and the React frontend.
+
+---
+
+## 8. Production Database Backups
+
+Regular database backups are critical to prevent data loss. Always run backup operations in the background or during off-peak hours.
+
+### Case A: MongoDB (Recommended Setup)
+To perform a full, point-in-time snapshot of your MongoDB production database, use `mongodump`.
+
+**Manual Backup:**
+```bash
+# Back up to a timestamped folder in the project backups/ directory
+mongodump --uri="mongodb://127.0.0.1:27017/medicine_bazar" --out=./backups/mongo-backup-$(date +%F_%H-%M-%S)
+```
+
+**Automated Backup Script (Linux/Nginx cron):**
+Create a cron job to automatically dump and compress the database daily:
+```bash
+0 3 * * * tar -czf ./backups/db-backup-$(date +\%F).tar.gz -C ./backups mongodump --uri="mongodb://127.0.0.1:27017/medicine_bazar"
+```
+
+**Database Restoration:**
+To restore a MongoDB backup:
+```bash
+mongorestore --uri="mongodb://127.0.0.1:27017/medicine_bazar" --drop ./backups/mongo-backup-YYYY-MM-DD_HH-MM-SS/medicine_bazar
+```
+
+---
+
+### Case B: JSON File Fallback Setup
+If running the JSON storage engine fallback, you must back up the database JSON files and files inside the secure uploads directory.
+
+**Manual Backup:**
+```powershell
+# Windows PowerShell
+Compress-Archive -Path "database\*", "uploads\*" -DestinationPath "backups\json-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss').zip"
+```
+```bash
+# Linux Bash
+zip -r ./backups/json-backup-$(date +%F_%H-%M-%S).zip ./database/ ./uploads/
+```
+
+---
+
+## 9. Production Smoke QA Checklist
+
+After performing a deploy or major upgrade, execute the following smoke tests to verify the core systems are operational:
+
+### 1. Localization & Toggle
+- [ ] **Bilingual Toggle**: Click the language switcher in the header (EN / বাংলা). Verify all navigation items, search bars, labels, and footer change immediately.
+- [ ] **State Preservation**: Refresh the page after selecting "বাংলা" and ensure the language selection persists across pages and refreshes.
+
+### 2. Search & Fuzzy Matching
+- [ ] **Fuzzy Search Overlays**: Type a misspelled name (e.g., "naap" instead of "Napa") in the main search bar. Verify that fuzzy matches appear correctly in the suggestion drop-down and that matching text ranges are bolded.
+- [ ] **Analytics Logging**: Enter a completely invalid query. Verify in the backend logs or database that search misses are recorded without failing the UI.
+
+### 3. Generic Alternatives Carousel
+- [ ] **Substitutes Rendering**: Open a specific product page (e.g., Napa Extend). Scroll down to the "Alternative Brands / বিকল্প ব্র্যান্ড" section.
+- [ ] **Verification**: Verify that alternatives have the same `genericName`, are sorted by stock and lowest price, show real savings calculations, and allow adding straight to the cart.
+
+### 4. Safe Prescription Workflow
+- [ ] **Customer Upload**: Navigate to checkout or the prescription upload form. Fill out the Patient Name, Doctor Name, Note, and upload a dummy PDF or image.
+- [ ] **Timeline & WhatsApp Link**: After uploading, verify you see a success timeline indicating "Pending Review / পর্যালোচনাধীন" and a green "Chat with Pharmacist" button linking to the verified WhatsApp hotline.
+- [ ] **Pharmacist Audit Desk**: Log in as an Administrator/Pharmacist, navigate to the Prescription Queue, verify the file link is accessible only under authentication, view the audit log entry, and attempt to approve or reject the prescription safely.
+
+### 5. Cashier POS Terminal
+- [ ] **Hotkey Interrupts**: Load the POS page. Press `F2` to focus the search bar, `F8` to focus the phone input, and `Esc` to clear modals or active actions.
+- [ ] **Hold/Recall Cart**: Add item to cart, click "Hold Cart" (or hold shortcut). Change active cart index, add new items, and verify you can switch back to the original cart seamlessly with no lost items or corrupted stock states.
+
+### 6. ERP Analytics Verification
+- [ ] **Live Dashboards**: Open the ERP dashboard, check that the daily earnings charts render correctly, inventory alarm zones display low-stock warning limits, and expiring items are categorized correctly (within 30, 60, and 90 days) based on real database records.

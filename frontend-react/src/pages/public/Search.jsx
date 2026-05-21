@@ -7,6 +7,7 @@ import ErrorState from '../../components/common/ErrorState';
 import Loading from '../../components/common/Loading';
 import ProductGrid from '../../components/product/ProductGrid';
 import { formatPrice, productImage, productPrice, productRouteId, unwrapData } from '../../utils/apiData';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,6 +18,20 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { language, t } = useLanguage();
+
+  const boldMatch = (text, queryText) => {
+    if (!text || !queryText) return <span>{text}</span>;
+    const regex = new RegExp(`(${queryText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    return (
+      <span>
+        {parts.map((part, i) => 
+          regex.test(part) ? <strong key={i} className="font-extrabold text-primary">{part}</strong> : <span key={i}>{part}</span>
+        )}
+      </span>
+    );
+  };
 
   useEffect(() => {
     const term = query.trim();
@@ -79,7 +94,7 @@ const Search = () => {
             <input
               type="text"
               className="flex-1 px-4 py-3 focus:outline-none"
-              placeholder="Search by medicine name, generic, or brand..."
+              placeholder={t('common.searchPlaceholder')}
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -88,7 +103,7 @@ const Search = () => {
               onFocus={() => setShowSuggestions(true)}
             />
             <Button type="submit" className="rounded-none px-6 rounded-r-sm">
-              <SearchIcon size={20} className="mr-2" /> Search
+              <SearchIcon size={20} className="mr-2" /> {t('common.search')}
             </Button>
           </div>
 
@@ -113,8 +128,16 @@ const Search = () => {
                           />
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
-                          <p className="text-xs text-gray-500">{item.genericName}</p>
+                          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5 flex-wrap">
+                            {boldMatch(language === 'bn' && item.nameBn ? item.nameBn : item.name, query)}
+                            {item.strength && <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium">{item.strength}</span>}
+                            {item.prescriptionRequired && <span className="px-1.5 py-0.5 bg-red-50 text-alert rounded text-[10px] font-medium border border-red-100">Rx</span>}
+                          </h4>
+                          {language === 'bn' && item.nameBn && (
+                            <span className="text-[11px] text-gray-400 block font-normal -mt-0.5">{item.name}</span>
+                          )}
+                          <p className="text-xs text-gray-500 font-medium truncate mt-0.5">{boldMatch(item.genericName, query)}</p>
+                          {item.manufacturer && <span className="text-[10px] text-gray-400 font-normal">{boldMatch(item.manufacturer, query)}</span>}
                         </div>
                         <div className="text-sm font-bold text-primary">{formatPrice(productPrice(item))}</div>
                       </Link>
@@ -129,9 +152,9 @@ const Search = () => {
 
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">
-          {urlQuery ? `Search Results for "${urlQuery}"` : 'Browse Products'}
+          {urlQuery ? `${t('common.searchResults')} "${urlQuery}"` : t('common.findMedicine')}
         </h2>
-        <div className="text-sm text-gray-500">{results.length} products found</div>
+        <div className="text-sm text-gray-500">{results.length} {t('common.productsFound')}</div>
       </div>
 
       {error ? (

@@ -105,6 +105,40 @@ router.get('/brands', asyncHandler(async (req, res) => {
   res.json({ success: true, data: brands });
 }));
 
+router.get('/:id/alternatives', asyncHandler(async (req, res) => {
+  const products = DataService.get('products').findAll({});
+  const product = DataService.get('products').findById(req.params.id) ||
+    products.find(p => p.slug === req.params.id || slugify(p.name) === req.params.id);
+  if (!product) return res.status(404).json({ success: false, message: 'Product not found', messageBn: 'পণ্য পাওয়া যায়নি' });
+
+  let alternatives = [];
+  if (product.genericName) {
+    alternatives = products.filter(p => 
+      p.id !== product.id && 
+      p.genericName?.toLowerCase() === product.genericName?.toLowerCase() && 
+      (!product.dosageForm || p.dosageForm?.toLowerCase() === product.dosageForm?.toLowerCase()) &&
+      (!product.strength || p.strength?.toLowerCase() === product.strength?.toLowerCase()) &&
+      p.active !== false
+    );
+
+    // Sort order:
+    // 1. inStock (stockQuantity > 0) first
+    // 2. sellingPrice (lowest price) second
+    alternatives.sort((a, b) => {
+      const aStock = (a.stockQuantity || 0) > 0 ? 1 : 0;
+      const bStock = (b.stockQuantity || 0) > 0 ? 1 : 0;
+      if (aStock !== bStock) {
+        return bStock - aStock; // in-stock first
+      }
+      const aPrice = a.sellingPrice || a.mrp || 0;
+      const bPrice = b.sellingPrice || b.mrp || 0;
+      return aPrice - bPrice; // lowest price first
+    });
+  }
+
+  res.json({ success: true, data: alternatives });
+}));
+
 router.get('/:id', asyncHandler(async (req, res) => {
   const products = DataService.get('products').findAll({});
   const product = DataService.get('products').findById(req.params.id) ||

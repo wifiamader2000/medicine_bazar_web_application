@@ -15,6 +15,7 @@ import ProductDetail from './pages/public/ProductDetail';
 import Category from './pages/public/Category';
 import Brand from './pages/public/Brand';
 import Checkout from './pages/public/Checkout';
+import OrderSuccess from './pages/public/OrderSuccess';
 import NotFound from './pages/public/NotFound';
 
 // Auth Pages
@@ -30,7 +31,7 @@ import ProductImport from './pages/admin/ProductImport';
 import ERPDashboard from './pages/admin/ERPDashboard';
 import BannerManager from './pages/admin/BannerManager';
 import InventoryManager from './pages/admin/InventoryManager';
-
+import PrescriptionQueue from './pages/admin/PrescriptionQueue';
 import Settings from './pages/admin/Settings';
 
 // POS Page
@@ -49,6 +50,7 @@ const App = () => {
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/brand/:slug" element={<Brand />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
           
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />
@@ -67,6 +69,7 @@ const App = () => {
           <Route path="erp" element={<ERPDashboard />} />
           <Route path="banners" element={<BannerManager />} />
           <Route path="inventory" element={<InventoryManager />} />
+          <Route path="prescriptions" element={<PrescriptionQueue />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

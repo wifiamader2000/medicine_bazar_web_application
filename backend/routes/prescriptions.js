@@ -54,6 +54,20 @@ router.get('/download/:id', authenticate, asyncHandler(async (req, res) => {
   res.download(filePath, prescription.originalName || 'prescription');
 }));
 
+router.get('/view/:id', authenticate, asyncHandler(async (req, res) => {
+  const prescription = DataService.get('prescriptions').findById(req.params.id);
+  if (!prescription) return res.status(404).json({ success: false, message: 'Prescription not found' });
+  if (prescription.customerId !== req.user.id && !['admin', 'pharmacist', 'manager'].includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+  const filePath = prescription.filePath || path.join(config.upload.dir, 'prescriptions', prescription.fileName);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ success: false, message: 'File not found' });
+  }
+  res.setHeader('Content-Type', prescription.mimeType || 'image/jpeg');
+  res.sendFile(filePath);
+}));
+
 router.get('/queue', authenticate, authorize('admin', 'pharmacist', 'manager'), asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 20 } = req.query;
   let prescriptions = DataService.get('prescriptions').findAll({});

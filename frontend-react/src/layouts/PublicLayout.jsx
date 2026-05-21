@@ -1,8 +1,11 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Search, ShoppingCart, User, PhoneCall, Globe, Play } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const PublicLayout = () => {
+  const { language, toggleLanguage, t } = useLanguage();
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background text-text selection:bg-primary/20">
       
@@ -11,11 +14,11 @@ const PublicLayout = () => {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex gap-4">
             <span className="flex items-center gap-1 font-medium"><PhoneCall size={12} /> 01602444532</span>
-            <span className="hidden md:inline text-white/80">Hyper-fast Medicine Delivery in BD</span>
+            <span className="hidden md:inline text-white/80">{language === 'en' ? 'Hyper-fast Medicine Delivery in BD' : 'বাংলাদেশে অতি দ্রুত মেডিসিন ডেলিভারি'}</span>
           </div>
           <div className="flex gap-4">
-            <Link to="/account" className="hover:text-primary-light transition-colors">Track Order</Link>
-            <Link to="/shop" className="hover:text-primary-light transition-colors">Shop</Link>
+            <Link to="/account" className="hover:text-primary-light transition-colors">{t('common.trackOrder')}</Link>
+            <Link to="/shop" className="hover:text-primary-light transition-colors">{t('common.shop')}</Link>
           </div>
         </div>
       </div>
@@ -38,7 +41,7 @@ const PublicLayout = () => {
               <div className="relative group">
                 <input 
                   type="text" 
-                  placeholder="Search for medicines, health products..." 
+                  placeholder={t('common.searchPlaceholder')} 
                   className="w-full bg-background border border-gray-200 rounded-full py-2.5 pl-5 pr-12 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-text placeholder-muted transition-all"
                   readOnly
                 />
@@ -50,8 +53,18 @@ const PublicLayout = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Language Toggle Button */}
+            <button 
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 hover:border-primary text-xs font-bold text-dark hover:text-primary transition-all cursor-pointer bg-gray-50"
+              title={language === 'en' ? 'বাংলায় দেখুন' : 'View in English'}
+            >
+              <Globe size={14} />
+              <span>{language === 'en' ? 'বাংলা' : 'EN'}</span>
+            </button>
+
             <Link to="/search" className="hidden lg:flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-primary/20">
-              Find Medicine
+              {t('common.findMedicine')}
             </Link>
             <Link to="/checkout" className="relative p-2 text-dark hover:text-primary transition-colors">
               <ShoppingCart size={24} />
@@ -69,12 +82,12 @@ const PublicLayout = () => {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-100 hidden md:block">
         <div className="container mx-auto px-4 py-3 flex items-center gap-8 text-sm font-bold text-dark">
-          <Link to="/category/otc" className="hover:text-primary transition-colors uppercase tracking-wider">OTC Medicine</Link>
-          <Link to="/category/women-care" className="hover:text-primary transition-colors uppercase tracking-wider">Women Care</Link>
-          <Link to="/category/baby-care" className="hover:text-primary transition-colors uppercase tracking-wider">Baby Care</Link>
-          <Link to="/category/devices" className="hover:text-primary transition-colors uppercase tracking-wider">Medical Devices</Link>
+          <Link to="/category/otc" className="hover:text-primary transition-colors uppercase tracking-wider">{t('nav.otc')}</Link>
+          <Link to="/category/women-care" className="hover:text-primary transition-colors uppercase tracking-wider">{t('nav.women')}</Link>
+          <Link to="/category/baby-care" className="hover:text-primary transition-colors uppercase tracking-wider">{t('nav.baby')}</Link>
+          <Link to="/category/devices" className="hover:text-primary transition-colors uppercase tracking-wider">{t('nav.devices')}</Link>
           <Link to="/shop?type=prescription" className="text-alert hover:text-alert/80 transition-colors uppercase tracking-wider flex items-center gap-1">
-            Prescription Only
+            {t('nav.prescriptionOnly')}
           </Link>
         </div>
       </nav>
@@ -101,7 +114,9 @@ const PublicLayout = () => {
                 </span>
               </Link>
               <p className="text-gray-400 mb-6 leading-relaxed">
-                Your trusted digital pharmacy in Bangladesh. We deliver authentic medicines and healthcare products directly to your doorstep.
+                {language === 'en' 
+                  ? 'Your trusted digital pharmacy in Bangladesh. We deliver authentic medicines and healthcare products directly to your doorstep.' 
+                  : 'বাংলাদেশে আপনার বিশ্বস্ত ডিজিটাল ফার্মেসি। আমরা আপনার দোরগোড়ায় আসল ওষুধ এবং স্বাস্থ্যসেবা পণ্য পৌঁছে দিই।'}
               </p>
               <div className="flex items-center gap-4">
                 <a href="https://facebook.com/medicinebazar24" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-full hover:bg-trust hover:text-white transition-all">
@@ -114,43 +129,43 @@ const PublicLayout = () => {
             </div>
 
             <div>
-              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Quick Links</h4>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">{language === 'en' ? 'Quick Links' : 'দ্রুত লিঙ্কসমূহ'}</h4>
               <ul className="space-y-3">
-                <li><Link to="/shop" className="hover:text-primary transition-colors">Shop All Medicines</Link></li>
-                <li><Link to="/search" className="hover:text-primary transition-colors">Find Medicine</Link></li>
-                <li><Link to="/checkout" className="hover:text-primary transition-colors">Checkout</Link></li>
-                <li><Link to="/account" className="hover:text-primary transition-colors">My Account</Link></li>
+                <li><Link to="/shop" className="hover:text-primary transition-colors">{language === 'en' ? 'Shop All Medicines' : 'সব ওষুধ কিনুন'}</Link></li>
+                <li><Link to="/search" className="hover:text-primary transition-colors">{t('common.findMedicine')}</Link></li>
+                <li><Link to="/checkout" className="hover:text-primary transition-colors">{t('checkout.checkout')}</Link></li>
+                <li><Link to="/account" className="hover:text-primary transition-colors">{language === 'en' ? 'My Account' : 'আমার অ্যাকাউন্ট'}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Customer Service</h4>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">{language === 'en' ? 'Customer Service' : 'গ্রাহক সেবা'}</h4>
               <ul className="space-y-3">
-                <li><Link to="/account" className="hover:text-primary transition-colors">Track Order</Link></li>
-                <li><Link to="/shop" className="hover:text-primary transition-colors">Browse Products</Link></li>
-                <li><Link to="/search" className="hover:text-primary transition-colors">Search Medicines</Link></li>
-                <li><Link to="/checkout" className="hover:text-primary transition-colors">Checkout</Link></li>
+                <li><Link to="/account" className="hover:text-primary transition-colors">{t('common.trackOrder')}</Link></li>
+                <li><Link to="/shop" className="hover:text-primary transition-colors">{language === 'en' ? 'Browse Products' : 'পণ্য খুঁজুন'}</Link></li>
+                <li><Link to="/search" className="hover:text-primary transition-colors">{t('common.findMedicine')}</Link></li>
+                <li><Link to="/checkout" className="hover:text-primary transition-colors">{t('checkout.checkout')}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Contact Us</h4>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">{language === 'en' ? 'Contact Us' : 'যোগাযোগ করুন'}</h4>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <PhoneCall size={16} className="mt-1 text-primary" />
                   <div>
-                    <p>Hotline (24/7)</p>
+                    <p>{language === 'en' ? 'Hotline (24/7)' : 'হটলাইন (২৪/৭)'}</p>
                     <p className="font-bold text-white">01602444532</p>
                   </div>
                 </li>
                 <li>
                   <a href="https://wa.me/8801602444532" target="_blank" rel="noreferrer" className="text-[#25D366] font-bold hover:underline">
-                    WhatsApp Support
+                    {t('home.chatWhatsApp')}
                   </a>
                 </li>
                 <li>
                   <a href="https://whatsapp.com/channel/0029Vb8A8KwAYlUGFxSkXy01" target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                    Join our WhatsApp Channel
+                    {language === 'en' ? 'Join our WhatsApp Channel' : 'আমাদের হোয়াটসঅ্যাপ চ্যানেলে যুক্ত হোন'}
                   </a>
                 </li>
               </ul>
@@ -160,7 +175,7 @@ const PublicLayout = () => {
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
             <p>&copy; {new Date().getFullYear()} Medicine Bazar. All rights reserved.</p>
             <div className="flex gap-4">
-              <span>Secure Checkout</span>
+              <span>{language === 'en' ? 'Secure Checkout' : 'নিরাপদ চেকআউট'}</span>
               <span className="font-bold text-gray-400">bKash | Nagad | Upay</span>
             </div>
           </div>
@@ -171,3 +186,4 @@ const PublicLayout = () => {
 };
 
 export default PublicLayout;
+

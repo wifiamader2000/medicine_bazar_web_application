@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, Package, Calculator, Image as ImageIcon, Box } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Package, Calculator, Image as ImageIcon, Box, FileText } from 'lucide-react';
 import { getStoredUser, clearStoredAuth } from '../utils/auth';
 
 const AdminLayout = () => {
@@ -23,6 +23,7 @@ const AdminLayout = () => {
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'Accounting / ERP', path: '/admin/erp', icon: Calculator },
+    { name: 'Prescription Queue', path: '/admin/prescriptions', icon: FileText },
     { name: 'Banners', path: '/admin/banners', icon: ImageIcon },
     { name: 'Inventory & POS', path: '/admin/inventory', icon: Box },
     { name: 'Mega Catalog', path: '/admin/products', icon: Package },

@@ -6,7 +6,10 @@ const DataService = require('../services/DataService');
 // Get daily sales
 router.get('/daily-sales', authenticate, adminOnly, async (req, res) => {
   try {
-    const orders = await DataService.get('orders').find({ paymentStatus: 'paid' });
+    const orders = await DataService.get('orders').find({ paymentStatus: 'paid' }) || [];
+    const posSales = await DataService.get('posSales').find() || [];
+    const refunds = await DataService.get('refunds').find() || [];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -16,8 +19,23 @@ router.get('/daily-sales', authenticate, adminOnly, async (req, res) => {
     orders.forEach(order => {
       const orderDate = new Date(order.createdAt || order.timestamp);
       if (orderDate >= today) {
-        todaySales += order.total;
+        todaySales += (order.total || 0);
         todayOrdersCount++;
+      }
+    });
+
+    posSales.forEach(sale => {
+      const saleDate = new Date(sale.createdAt || sale.timestamp);
+      if (saleDate >= today) {
+        todaySales += (sale.total || 0);
+        todayOrdersCount++;
+      }
+    });
+
+    refunds.forEach(refund => {
+      const refundDate = new Date(refund.createdAt || refund.timestamp);
+      if (refundDate >= today) {
+        todaySales -= (refund.refundTotal || 0);
       }
     });
     
@@ -30,21 +48,33 @@ router.get('/daily-sales', authenticate, adminOnly, async (req, res) => {
 // Get profit/loss summary
 router.get('/summary', authenticate, adminOnly, async (req, res) => {
   try {
-    const orders = await DataService.get('orders').find({ paymentStatus: 'paid' });
+    const orders = await DataService.get('orders').find({ paymentStatus: 'paid' }) || [];
+    const posSales = await DataService.get('posSales').find() || [];
+    const refunds = await DataService.get('refunds').find() || [];
     const transactions = await DataService.get('transactions').find() || [];
     
     let totalIncome = 0;
     let totalExpense = 0;
     
-    // Add orders to income (assuming basic model, can be refined)
+    // Add online orders to income
     orders.forEach(order => {
-      totalIncome += order.total;
+      totalIncome += (order.total || 0);
+    });
+
+    // Add POS sales to income
+    posSales.forEach(sale => {
+      totalIncome += (sale.total || 0);
+    });
+
+    // Subtract refunds
+    refunds.forEach(refund => {
+      totalIncome -= (refund.refundTotal || 0);
     });
     
     // Process explicit transactions (e.g. expenses)
     transactions.forEach(t => {
-      if (t.type === 'income') totalIncome += t.amount;
-      if (t.type === 'expense') totalExpense += t.amount;
+      if (t.type === 'income') totalIncome += (t.amount || 0);
+      if (t.type === 'expense') totalExpense += (t.amount || 0);
     });
     
     res.json({ 
@@ -63,8 +93,13 @@ router.post('/transactions', authenticate, adminOnly, async (req, res) => {
   try {
     const { amount, type, category, description, referenceId, paymentMethod } = req.body;
     
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or negative amount' });
+    }
+
     const transaction = {
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       type,
       category,
       description,

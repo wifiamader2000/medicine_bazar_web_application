@@ -141,6 +141,12 @@ router.post('/', authenticate, authorize('admin', 'manager'), asyncHandler(async
 }));
 
 router.put('/:id', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
+  if (req.body.stockQuantity !== undefined) {
+    req.body.stockQuantity = parseInt(req.body.stockQuantity, 10);
+    if (isNaN(req.body.stockQuantity) || req.body.stockQuantity < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid stock quantity' });
+    }
+  }
   const product = DataService.get('products').update(req.params.id, req.body);
   if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
   logAudit(req, 'product_updated', { productId: product.id });

@@ -13,6 +13,9 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   if (!shippingAddress) {
     return res.status(400).json({ success: false, message: 'Shipping address required', messageBn: 'ডেলিভারি ঠিকানা প্রয়োজন' });
   }
+  if (paymentMethod === 'sslcommerz' || paymentMethod === 'bkash_auto') {
+    return res.status(400).json({ success: false, message: 'This payment method is coming soon. Please select Manual or COD.', messageBn: 'এই পেমেন্ট মেথডটি শীঘ্রই আসছে। দয়া করে ম্যানুয়াল বা ক্যাশ অন ডেলিভারি নির্বাচন করুন।' });
+  }
 
   let subtotal = 0;
   let discount = 0;

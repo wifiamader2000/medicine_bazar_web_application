@@ -73,11 +73,12 @@ console.log('Missing Strength:', missingStrength);
 console.log('Missing Image:', missingImage);
 console.log('Broken Bangla:', brokenBangla);
 console.log('Broken Aliases:', brokenAliases);
+
 console.log('Total Auto-Fixed:', updatedCount);
 
-// Generate Top 100 list
-const top100 = products.slice(0, 100).map(p => `${p.name} ${p.strength} (${p.dosageForm}) - ${p.manufacturer}`);
 const fs = require('fs');
-fs.writeFileSync('../docs/TOP_100_IMAGE_NEEDED.md', '# Top 100 Products Needing Real Images\n\n' + top100.map((t, i) => `${i+1}. [ ] ${t}`).join('\n'));
-
+const path = require('path');
+const top100 = products.slice(0, 100).map(p => `${p.name} ${p.strength || ''} (${p.dosageForm || ''}) - ${p.manufacturer || ''}`);
+fs.writeFileSync(path.join(__dirname, '../docs/TOP_100_IMAGE_NEEDED.md'), '# Top 100 Products Needing Real Images\n\n' + top100.map((t, i) => `${i+1}. [ ] ${t}`).join('\n'));
 console.log('Generated Top 100 image list at docs/TOP_100_IMAGE_NEEDED.md');
+

@@ -3,6 +3,12 @@ const path = require('path');
 
 const BASE = process.env.QA_BASE || 'http://localhost:5050/api/v1';
 const fixtureDir = path.join(__dirname, 'fixtures/bd-medicine-sample');
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medicinebazar.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  throw new Error('Set ADMIN_PASSWORD before running BD medicine import verification.');
+}
 
 async function api(endpoint, options = {}) {
   const response = await fetch(`${BASE}${endpoint}`, options);
@@ -15,7 +21,7 @@ async function api(endpoint, options = {}) {
   const login = await api('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@medicinebazar.com', password: 'Admin@MedBazar2024' }),
+    body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
   });
   const token = login.data.token;
   const beforeProducts = (await api('/products?limit=1')).pagination.total;

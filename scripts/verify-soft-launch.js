@@ -3,6 +3,13 @@ process.env.NODE_ENV = 'test';
 const { startServer } = require('../backend/server');
 
 const BASE = 'http://localhost:5050/api/v1';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medicinebazar.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const CUSTOMER_PASSWORD = process.env.SOFT_LAUNCH_CUSTOMER_PASSWORD;
+
+if (!ADMIN_PASSWORD || !CUSTOMER_PASSWORD) {
+  throw new Error('Set ADMIN_PASSWORD and SOFT_LAUNCH_CUSTOMER_PASSWORD before running soft launch verification.');
+}
 
 async function api(endpoint, options = {}) {
   const res = await fetch(BASE + endpoint, options);
@@ -28,7 +35,7 @@ async function registerCustomer() {
   const res = await api('/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Soft Launch Customer', email, password: 'SoftLaunch@2026', phone: '01602444532' }),
+    body: JSON.stringify({ name: 'Soft Launch Customer', email, password: CUSTOMER_PASSWORD, phone: '01602444532' }),
   });
   return res.data.token;
 }
@@ -38,7 +45,7 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 300));
 
   try {
-    const adminToken = await login('admin@medicinebazar.com', 'Admin@MedBazar2024');
+    const adminToken = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
     const customerToken = await registerCustomer();
     const otherCustomerToken = await registerCustomer();
     const auth = token => ({ Authorization: `Bearer ${token}` });

@@ -30,5 +30,30 @@ for (const file of files) {
   console.log(`  Backed up: ${file} (${(stat.size / 1024).toFixed(1)} KB)`);
 }
 
-console.log(`\nBackup complete: ${files.length} files, ${(totalSize / 1024).toFixed(1)} KB total`);
+function copyDir(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) return 0;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let copied = 0;
+  for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    const src = path.join(srcDir, entry.name);
+    const dest = path.join(destDir, entry.name);
+    if (entry.isDirectory()) copied += copyDir(src, dest);
+    else {
+      fs.copyFileSync(src, dest);
+      copied++;
+    }
+  }
+  return copied;
+}
+
+const uploadedFiles = copyDir(config.paths.uploads, path.join(backupDir, 'uploads'));
+const manifest = {
+  createdAt: new Date().toISOString(),
+  databaseFiles: files.length,
+  uploadedFiles,
+  note: 'Schedule this script daily on the staging/production server: npm run backup:daily',
+};
+fs.writeFileSync(path.join(backupDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+
+console.log(`\nBackup complete: ${files.length} DB files, ${uploadedFiles} upload files, ${(totalSize / 1024).toFixed(1)} KB DB total`);
 console.log(`Location: ${backupDir}`);

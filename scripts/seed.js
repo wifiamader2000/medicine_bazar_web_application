@@ -7,7 +7,10 @@ async function seed() {
   console.log('Seeding Medicine Bazar database...\n');
 
   // Admin user
-  const adminPassword = await bcrypt.hash('Admin@MedBazar2024', 12);
+  if (!process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_STAFF_PASSWORD) {
+    throw new Error('Set SEED_ADMIN_PASSWORD and SEED_STAFF_PASSWORD before running seed.');
+  }
+  const adminPassword = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD, 12);
   const existingAdmin = DataService.get('users').findOne({ email: 'admin@medicinebazar.com' });
   if (!existingAdmin) {
     DataService.get('users').create({
@@ -23,7 +26,7 @@ async function seed() {
   }
 
   // Sample staff users
-  const staffPassword = await bcrypt.hash('Staff@MedBazar2024', 12);
+  const staffPassword = await bcrypt.hash(process.env.SEED_STAFF_PASSWORD, 12);
   const staffUsers = [
     { name: 'Cashier', email: 'cashier@medicinebazar.com', role: 'cashier' },
     { name: 'Pharmacist', email: 'pharmacist@medicinebazar.com', role: 'pharmacist' },

@@ -4,6 +4,15 @@ const { chromium } = require('playwright');
 
 const BASE = process.env.QA_BASE || 'http://localhost:5050';
 const outDir = path.join(process.cwd(), 'qa-screenshots');
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medicinebazar.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const CASHIER_EMAIL = process.env.CASHIER_EMAIL || 'cashier@medicinebazar.com';
+const CASHIER_PASSWORD = process.env.CASHIER_PASSWORD;
+const VISUAL_QA_CUSTOMER_PASSWORD = process.env.VISUAL_QA_CUSTOMER_PASSWORD;
+
+if (!ADMIN_PASSWORD || !CASHIER_PASSWORD || !VISUAL_QA_CUSTOMER_PASSWORD) {
+  throw new Error('Set ADMIN_PASSWORD, CASHIER_PASSWORD, and VISUAL_QA_CUSTOMER_PASSWORD before running visual QA.');
+}
 
 async function api(request, endpoint, options = {}) {
   const response = await request.fetch(`${BASE}/api/v1${endpoint}`, {
@@ -26,10 +35,9 @@ async function login(request, email, password) {
 
 async function ensureCustomer(request) {
   const email = `visualqa-${Date.now()}@medicinebazar.local`;
-  const password = 'VisualQA@2026';
   const { response, data } = await api(request, '/auth/register', {
     method: 'POST',
-    data: { name: 'Visual QA Customer', email, password, phone: '01700000002' },
+    data: { name: 'Visual QA Customer', email, password: VISUAL_QA_CUSTOMER_PASSWORD, phone: '01700000002' },
   });
   if (!response.ok() || !data?.data?.token) throw new Error(`Customer register failed: ${response.status()}`);
   return data.data;
@@ -171,8 +179,8 @@ async function checkPage(browser, target, viewport, auth = null) {
 
   const products = (await api(request, '/products?limit=1')).data.data;
   const product = products[0];
-  const admin = await login(request, 'admin@medicinebazar.com', 'Admin@MedBazar2024');
-  const cashier = await login(request, 'cashier@medicinebazar.com', 'Staff@MedBazar2024');
+  const admin = await login(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+  const cashier = await login(request, CASHIER_EMAIL, CASHIER_PASSWORD);
   const customer = await ensureCustomer(request);
   await api(request, '/cart/add', {
     method: 'POST',

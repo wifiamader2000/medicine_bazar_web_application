@@ -468,6 +468,10 @@ router.post('/settings/logo', authenticate, authorize('admin'), logoUpload.singl
   if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
   const logoUrl = `/uploads/logos/${req.file.filename}`;
   const { type = 'headerLogo' } = req.body;
+  const allowedLogoTypes = ['headerLogo', 'footerLogo', 'favicon', 'appIcon'];
+  if (!allowedLogoTypes.includes(type)) {
+    return res.status(400).json({ success: false, message: 'Invalid logo type' });
+  }
   const settings = DataService.get('settings').findAll({});
   if (settings.length > 0) {
     DataService.get('settings').update(settings[0].id, { [type]: logoUrl });

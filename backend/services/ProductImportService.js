@@ -8,6 +8,7 @@ const FIELD_MAP = {
   'generic name': 'genericName', generic: 'genericName', genericname: 'genericName',
   company: 'manufacturer', manufacturer: 'manufacturer', brand: 'manufacturer',
   category: 'category', strength: 'strength', 'dosage form': 'dosageForm', dosageform: 'dosageForm',
+  'dosage strength': 'strength',
   'medicine type': 'dosageForm', medicinetype: 'dosageForm',
   'pack size': 'packSize', packsize: 'packSize', barcode: 'barcode', sku: 'sku',
   mrp: 'mrp', price: 'mrp', 'selling price': 'sellingPrice', sellingprice: 'sellingPrice',
@@ -19,7 +20,7 @@ const FIELD_MAP = {
   expiry: 'expiryDate', 'expiry date': 'expiryDate', expirydate: 'expiryDate',
   'prescription required': 'prescriptionRequired', prescriptionrequired: 'prescriptionRequired', rx: 'prescriptionRequired',
   active: 'active', uses: 'uses', dosage: 'dosage', 'side effects': 'sideEffects', sideeffects: 'sideEffects',
-  warning: 'warning', warnings: 'warning', storage: 'storage', image: 'imageUrl', 'image url': 'imageUrl',
+  warning: 'warnings', warnings: 'warnings', storage: 'storage', image: 'imageUrl', 'image url': 'imageUrl',
   imageurl: 'imageUrl', 'media id': 'mediaId', mediaid: 'mediaId',
   aliases: 'aliases', keywords: 'searchKeywords', 'search keywords': 'searchKeywords',
   alternatives: 'alternatives',
@@ -36,19 +37,33 @@ function parseBool(value, fallback = false) {
   return ['true', 'yes', '1', 'y', 'rx', 'required', 'active'].includes(String(value).toLowerCase().trim());
 }
 
-function parseNumber(value, fallback = 0) {
-  const cleaned = String(value ?? '').replace(/[^\d.-]/g, '');
+function parseNumber(value, fallback = null) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const cleaned = String(value).replace(/[^\d.-]/g, '');
   const parsed = Number.parseFloat(cleaned);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function parseInteger(value, fallback = 0) {
-  const parsed = Number.parseInt(String(value ?? '').replace(/[^\d-]/g, ''), 10);
+  if (value === undefined || value === null || value === '') return fallback;
+  const parsed = Number.parseInt(String(value).replace(/[^\d-]/g, ''), 10);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function readRows(filePath, originalName = filePath) {
+function readRows(filePath, originalName = filePath, isApiJson = false, jsonData = null) {
+  if (isApiJson && jsonData) {
+    return Array.isArray(jsonData) ? jsonData : [];
+  }
   const ext = path.extname(originalName).toLowerCase();
+  if (ext === '.json') {
+    const content = fs.readFileSync(filePath, 'utf8');
+    try {
+      const parsed = JSON.parse(content);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      throw new Error('Invalid JSON file format.');
+    }
+  }
   if (ext === '.xlsx' || ext === '.xls') {
     throw new Error('Excel import is disabled. Convert the sheet to CSV or tab-delimited TXT before importing.');
   }
@@ -59,10 +74,10 @@ function readRows(filePath, originalName = filePath) {
   if (ext === '.txt') {
     return parse(content, { columns: true, delimiter: '\t', skip_empty_lines: true, trim: true, relax_column_count: true });
   }
-  throw new Error('Unsupported import file. Use CSV or tab-delimited TXT.');
+  throw new Error('Unsupported import file. Use CSV, JSON, or tab-delimited TXT.');
 }
 
-function normalizeRow(row, index) {
+function normalizeRow(row, index, sourceName) {
   const mapped = {};
   for (const [rawKey, value] of Object.entries(row)) {
     const key = String(rawKey).toLowerCase().trim();
@@ -75,9 +90,9 @@ function normalizeRow(row, index) {
   }
 
   const name = String(mapped.name).trim();
-  const mrp = parseNumber(mapped.mrp);
+  const mrp = parseNumber(mapped.mrp, null); // Null if missing
   const sellingPrice = parseNumber(mapped.sellingPrice, mrp);
-  const purchasePrice = parseNumber(mapped.purchasePrice, Math.max(sellingPrice * 0.78, 0));
+  const purchasePrice = parseNumber(mapped.purchasePrice, mrp ? Math.max(mrp * 0.78, 0) : null);
 
   for (const field of LIST_FIELDS) {
     if (typeof mapped[field] === 'string') {
@@ -102,7 +117,7 @@ function normalizeRow(row, index) {
     mrp,
     sellingPrice,
     purchasePrice,
-    stockQuantity: parseInteger(mapped.stockQuantity),
+    stockQuantity: parseInteger(mapped.stockQuantity, 0),
     unitType: mapped.unitType ? String(mapped.unitType).trim() : 'piece',
     batchNumber: mapped.batchNumber ? String(mapped.batchNumber).trim() : '',
     expiryDate: mapped.expiryDate ? String(mapped.expiryDate).trim() : '',
@@ -110,10 +125,17 @@ function normalizeRow(row, index) {
     active: parseBool(mapped.active, true),
     imageUrl: mapped.imageUrl ? String(mapped.imageUrl).trim() : '/assets/images/medicine-placeholder.svg',
     mediaId: mapped.mediaId ? String(mapped.mediaId).trim() : '',
+    aliases: mapped.aliases || [],
+    uses: mapped.uses ? String(mapped.uses).trim() : '',
+    dosage: mapped.dosage ? String(mapped.dosage).trim() : '',
+    sideEffects: mapped.sideEffects ? String(mapped.sideEffects).trim() : '',
+    warnings: mapped.warnings ? String(mapped.warnings).trim() : '',
+    storage: mapped.storage ? String(mapped.storage).trim() : '',
+    alternatives: mapped.alternatives || [],
     slug: mapped.slug || slugify(`${name}-${mapped.strength || ''}-${mapped.manufacturer || ''}`),
     categorySlug: slugify(mapped.category || 'General Medicine'),
     brandSlug: slugify(mapped.manufacturer || ''),
-    importedSource: 'catalog-import',
+    importedSource: sourceName || 'custom-csv',
   };
 
   if (!product.sku) {
@@ -124,11 +146,12 @@ function normalizeRow(row, index) {
   return { product };
 }
 
-function isDuplicate(product, existingProducts) {
+function findExistingDuplicate(product, existingProducts) {
   const name = product.name.toLowerCase();
   const strength = String(product.strength || '').toLowerCase();
   const manufacturer = String(product.manufacturer || '').toLowerCase();
-  return existingProducts.some(ep =>
+  
+  return existingProducts.find(ep =>
     (String(ep.name || '').toLowerCase() === name &&
       String(ep.strength || '').toLowerCase() === strength &&
       String(ep.manufacturer || '').toLowerCase() === manufacturer) ||
@@ -137,24 +160,49 @@ function isDuplicate(product, existingProducts) {
   );
 }
 
-function parseProductImport(filePath, originalName, existingProducts = []) {
-  const rows = readRows(filePath, originalName);
+function parseProductImport(filePath, originalName, existingProducts = [], options = {}) {
+  const sourceName = options.sourceName || 'custom-csv';
+  const rows = readRows(filePath, originalName, options.isApiJson, options.jsonData);
+  
   const validRows = [];
   const invalidRows = [];
   const duplicates = [];
+  const updatedRows = [];
   const seen = [];
 
   rows.forEach((row, index) => {
-    const normalized = normalizeRow(row, index);
+    const normalized = normalizeRow(row, index, sourceName);
     if (normalized.error) {
       invalidRows.push(normalized.error);
       return;
     }
     const product = normalized.product;
-    if (isDuplicate(product, existingProducts) || isDuplicate(product, seen)) {
-      duplicates.push(product);
+    
+    // Check against existing database products
+    const dbDuplicate = findExistingDuplicate(product, existingProducts);
+    
+    if (dbDuplicate) {
+      // Safe update logic for existing duplicates
+      if (options.updateDuplicates) {
+        const updatedProduct = { ...dbDuplicate };
+        if (product.mrp !== null) updatedProduct.mrp = product.mrp;
+        if (product.sellingPrice !== null) updatedProduct.sellingPrice = product.sellingPrice;
+        if (product.stockQuantity > 0) updatedProduct.stockQuantity = product.stockQuantity;
+        if (product.genericName && !updatedProduct.genericName) updatedProduct.genericName = product.genericName;
+        updatedRows.push(updatedProduct);
+      } else {
+        duplicates.push({ row: index + 2, data: row, reason: 'Duplicate in database' });
+      }
       return;
     }
+    
+    // Check against current batch
+    const batchDuplicate = findExistingDuplicate(product, seen);
+    if (batchDuplicate) {
+      duplicates.push({ row: index + 2, data: row, reason: 'Duplicate in current import batch' });
+      return;
+    }
+
     seen.push(product);
     validRows.push(product);
   });
@@ -162,6 +210,7 @@ function parseProductImport(filePath, originalName, existingProducts = []) {
   return {
     rows,
     validRows,
+    updatedRows,
     invalidRows,
     duplicates,
     newProducts: validRows,

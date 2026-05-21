@@ -2,35 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const DataService = require('../services/DataService');
-
-const SEARCH_FIELDS = [
-  'name', 'nameBn', 'genericName', 'manufacturer', 'category', 'strength', 'dosageForm', 'sku', 'barcode',
-  'aliases', 'uses', 'searchKeywords', 'drugClass', 'indication', 'indications', 'pharmacology',
-];
-
-function includes(value, query) {
-  if (!value) return false;
-  if (Array.isArray(value)) return value.some(item => includes(item, query));
-  return String(value).toLowerCase().includes(query);
-}
-
-function entitySuggestions(storeName, fields, q, type, limit) {
-  const query = q.toLowerCase();
-  return DataService.get(storeName).findAll({})
-    .filter(item => item.active !== false && fields.some(field => includes(item[field], query)))
-    .slice(0, limit)
-    .map(item => ({
-      id: item.id,
-      type,
-      name: item.name || item.genericName,
-      label: item.name || item.genericName,
-      genericName: item.genericName || '',
-      drugClass: item.drugClass || '',
-      indication: item.indication || '',
-      manufacturer: item.name || '',
-      href: type === 'manufacturer' ? `/brand/${item.slug || item.name}` : `/search?q=${encodeURIComponent(item.name || item.genericName)}`,
-    }));
-}
+const SearchService = require('../services/search/SearchService');
 
 router.get('/suggestions', asyncHandler(async (req, res) => {
   const { q, limit = 10 } = req.query;
@@ -38,41 +10,7 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
     return res.json({ success: true, data: [] });
   }
   const max = parseInt(limit);
-  const results = DataService.get('products').search(SEARCH_FIELDS, q, max);
-  const productSuggestions = results
-    .filter(p => p.active !== false)
-    .map(p => ({
-      id: p.id,
-      type: 'product',
-      label: `${p.name}${p.strength ? ' ' + p.strength : ''}`,
-      name: p.name,
-      nameBn: p.nameBn || '',
-      genericName: p.genericName || '',
-      strength: p.strength || '',
-      dosageForm: p.dosageForm || '',
-      manufacturer: p.manufacturer || '',
-      drugClass: p.drugClass || '',
-      indication: p.indication || '',
-      sellingPrice: p.sellingPrice || p.mrp || 0,
-      mrp: p.mrp || 0,
-      imageUrl: p.imageUrl || '/assets/images/medicine-placeholder.svg',
-      inStock: (p.stockQuantity || 0) > 0,
-      prescriptionRequired: p.prescriptionRequired || false,
-      href: `/product/${p.id}`,
-    }));
-  const genericSuggestions = entitySuggestions('generics', ['name', 'genericName', 'drugClass', 'indication', 'indications'], q, 'generic', max);
-  const manufacturerSuggestions = entitySuggestions('manufacturers', ['name'], q, 'manufacturer', max);
-  const indicationSuggestions = entitySuggestions('indications', ['name'], q, 'indication', max);
-  const drugClassSuggestions = entitySuggestions('drugClasses', ['name'], q, 'drug_class', max);
-  const seen = new Set();
-  const suggestions = [...productSuggestions, ...genericSuggestions, ...manufacturerSuggestions, ...indicationSuggestions, ...drugClassSuggestions]
-    .filter(item => {
-      const key = `${item.type}:${String(item.name || '').toLowerCase()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, max);
+  const suggestions = await SearchService.getSuggestions(q, max);
   res.json({ success: true, data: suggestions });
 }));
 
@@ -82,8 +20,7 @@ router.get('/products', asyncHandler(async (req, res) => {
     return res.json({ success: true, data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } });
   }
 
-  let results = DataService.get('products').search(SEARCH_FIELDS, q, 1000);
-  results = results.filter(p => p.active !== false);
+  let results = await SearchService.searchProducts(q, { category, brand, minPrice, maxPrice, sort, inStock, prescriptionRequired });
 
   if (category) results = results.filter(p => p.category?.toLowerCase() === category.toLowerCase() || p.categorySlug === category);
   if (brand) results = results.filter(p => p.manufacturer?.toLowerCase() === brand.toLowerCase());
@@ -101,10 +38,6 @@ router.get('/products', asyncHandler(async (req, res) => {
   const p = parseInt(page);
   const l = parseInt(limit);
   const data = results.slice((p - 1) * l, p * l);
-
-  if (total === 0) {
-    DataService.get('searchLogs').create({ query: q, resultCount: 0, filters: { category, brand } });
-  }
 
   res.json({ success: true, data, pagination: { total, page: p, limit: l, totalPages: Math.ceil(total / l) } });
 }));

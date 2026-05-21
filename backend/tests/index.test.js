@@ -1,8 +1,12 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('http');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const BASE = process.env.TEST_URL || 'http://localhost:5050';
+const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@medicinebazar.com';
+const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || `Test-${crypto.randomUUID()}!Aa1`;
 
 function request(method, path, body = null, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -31,16 +35,32 @@ function request(method, path, body = null, headers = {}) {
 describe('Medicine Bazar API Tests', () => {
   let adminToken = null;
   let server = null;
+  let originalAdminPassword = null;
 
   before(async () => {
     process.env.NODE_ENV = 'test';
     const appServer = require('../server');
-    server = appServer.startServer();
+    server = await appServer.startServer();
+    const DataService = require('../services/DataService');
+    const admin = DataService.get('users').findOne({ email: TEST_ADMIN_EMAIL });
+    assert.ok(admin, 'Admin test user must exist');
+    originalAdminPassword = admin.password;
+    DataService.get('users').update(admin.id, { password: await bcrypt.hash(TEST_ADMIN_PASSWORD, 12) });
     await new Promise(resolve => setTimeout(resolve, 300));
   });
 
   after(async () => {
+    if (originalAdminPassword) {
+      const DataService = require('../services/DataService');
+      const admin = DataService.get('users').findOne({ email: TEST_ADMIN_EMAIL });
+      if (admin) DataService.get('users').update(admin.id, { password: originalAdminPassword });
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
     if (server) await new Promise(resolve => server.close(resolve));
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
   });
 
   describe('Health Check', () => {
@@ -56,8 +76,8 @@ describe('Medicine Bazar API Tests', () => {
   describe('Authentication', () => {
     it('should login admin user', async () => {
       const res = await request('POST', '/api/v1/auth/login', {
-        email: 'admin@medicinebazar.com',
-        password: 'Admin@MedBazar2024',
+        email: TEST_ADMIN_EMAIL,
+        password: TEST_ADMIN_PASSWORD,
       });
       assert.strictEqual(res.status, 200);
       assert.strictEqual(res.data.success, true);
@@ -68,7 +88,7 @@ describe('Medicine Bazar API Tests', () => {
 
     it('should reject invalid credentials', async () => {
       const res = await request('POST', '/api/v1/auth/login', {
-        email: 'admin@medicinebazar.com',
+        email: TEST_ADMIN_EMAIL,
         password: 'wrongpassword',
       });
       assert.strictEqual(res.data.success, false);
@@ -80,7 +100,7 @@ describe('Medicine Bazar API Tests', () => {
       });
       assert.strictEqual(res.status, 200);
       assert.strictEqual(res.data.success, true);
-      assert.strictEqual(res.data.data.email, 'admin@medicinebazar.com');
+      assert.strictEqual(res.data.data.email, TEST_ADMIN_EMAIL);
     });
 
     it('should reject unauthenticated access to admin routes', async () => {
@@ -129,6 +149,40 @@ describe('Medicine Bazar API Tests', () => {
       const res = await request('GET', '/api/v1/search/products?q=paracetamol');
       assert.strictEqual(res.status, 200);
       assert.ok(res.data.data.length > 0);
+    });
+
+    it('should initialize search adapter structure', async () => {
+      const SearchService = require('../services/search/SearchService');
+      const providerName = SearchService.getProviderName();
+      assert.ok(providerName === 'local' || providerName === 'meilisearch' || providerName === 'algolia');
+    });
+
+    it('should log failed search queries to search logs', async () => {
+      const uniqueTerm = 'nonexistent_medicine_xyz_' + Date.now();
+      const res = await request('GET', `/api/v1/search/products?q=${uniqueTerm}`);
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.data.data.length, 0);
+
+      const DataService = require('../services/DataService');
+      const logs = DataService.get('searchLogs').findAll({});
+      const matchedLog = logs.find(l => l.query === uniqueTerm || l.noResultTerm === uniqueTerm);
+      
+      assert.ok(matchedLog);
+      assert.strictEqual(matchedLog.resultCount, 0);
+      assert.strictEqual(matchedLog.noResultTerm, uniqueTerm);
+      assert.ok(matchedLog.timestamp);
+    });
+
+    it('should expose zero-result reports endpoint to admin and restrict unauthorized users', async () => {
+      const adminRes = await request('GET', '/api/v1/reports/search-logs', null, {
+        Authorization: `Bearer ${adminToken}`,
+      });
+      assert.strictEqual(adminRes.status, 200);
+      assert.strictEqual(adminRes.data.success, true);
+      assert.ok(Array.isArray(adminRes.data.data));
+
+      const anonRes = await request('GET', '/api/v1/reports/search-logs');
+      assert.ok([401, 403].includes(anonRes.status));
     });
   });
 

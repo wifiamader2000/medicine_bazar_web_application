@@ -217,16 +217,17 @@ const MB = {
             ['Paracetamol', 'Paracetamol'],
             ['fever', 'Fever related medicine'],
           ] : [];
-          const popularHtml = popular.map(([value, label]) => `<a href="/search?q=${encodeURIComponent(value)}" class="search-suggestion-item search-popular">${label}</a>`).join('');
+          const mark = (text = '') => String(text).replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>');
+          const popularHtml = popular.map(([value, label]) => `<a href="/search?q=${encodeURIComponent(value)}" class="search-suggestion-item search-popular"><span>${mark(label)}</span></a>`).join('');
           const productHtml = (res.data || []).map((p) => `
-            <a href="/product/${p.id}" class="search-suggestion-item">
-              <img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" alt="${p.name}" onerror="this.src='/assets/images/medicine-placeholder.svg'">
-              <div class="info"><div class="name">${p.name} ${p.strength || ''}</div><div class="generic">${p.genericName || ''} ${p.manufacturer ? '- ' + p.manufacturer : ''}</div></div>
-              <div class="price">${this.formatPrice(p.sellingPrice || p.mrp)}</div>
+            <a href="${p.href || (p.type === 'product' ? '/product/' + p.id : '/search?q=' + encodeURIComponent(p.name || p.label || q))}" class="search-suggestion-item">
+              ${p.type === 'product' ? `<img src="${p.imageUrl || '/assets/images/medicine-placeholder.svg'}" alt="${p.name}" onerror="this.src='/assets/images/medicine-placeholder.svg'">` : '<span class="suggestion-type-icon">&#128269;</span>'}
+              <div class="info"><div class="name">${mark(p.label || p.name || '')} <small>${p.type && p.type !== 'product' ? p.type.replace('_', ' ') : ''}</small></div><div class="generic">${mark([p.genericName, p.manufacturer, p.drugClass, p.indication].filter(Boolean).join(' - '))}</div></div>
+              <div class="price">${p.type === 'product' ? this.formatPrice(p.sellingPrice || p.mrp) : '&rarr;'}</div>
             </a>`).join('');
-          suggestions.innerHTML = productHtml || popularHtml
-            ? popularHtml + productHtml + `<a href="/search?q=${encodeURIComponent(q)}" class="search-suggestion-item see-all">${this.t('See all results', 'সব ফলাফল দেখুন')} &rarr;</a>`
-            : `<div class="search-suggestion-item muted">${this.t('No results found', 'কোনো ফলাফল পাওয়া যায়নি')}</div>`;
+          suggestions.innerHTML = `<div class="search-overlay-grid"><div class="search-overlay-side"><strong>${this.t('Trending', 'জনপ্রিয়')}</strong>${popularHtml || ['Napa', 'Paracetamol', 'Fever', 'Diabetes'].map(v => `<a href="/search?q=${encodeURIComponent(v)}">${v}</a>`).join('')}</div><div class="search-overlay-results">` + (productHtml
+            ? productHtml + `<a href="/search?q=${encodeURIComponent(q)}" class="search-suggestion-item see-all">${this.t('See all results', 'সব ফলাফল দেখুন')} &rarr;</a></div></div>`
+            : `<div class="search-suggestion-item muted">${this.t('No results found', 'কোনো ফলাফল পাওয়া যায়নি')}</div></div></div>`);
           suggestions.classList.add('show');
         } catch {
           suggestions.classList.remove('show');

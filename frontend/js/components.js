@@ -84,6 +84,13 @@ const MB_COMPONENTS = {
         <div class="footer-bottom"><div class="container">&copy; 2026 Medicine Bazar. All rights reserved.</div></div>
         <div class="footer-disclaimer"><div class="container">এই তথ্য শুধুমাত্র সাধারণ জ্ঞানের জন্য। চিকিৎসকের পরামর্শ ছাড়া ওষুধ সেবন করবেন না।</div></div>
       </footer>
+      <a class="btn btn-primary mobile-rx-cta" href="/prescription-upload">Upload Rx</a>
+      <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <a href="/" class="active"><span class="icon">&#8962;</span><span>Home</span></a>
+        <a href="/shop"><span class="icon">&#128138;</span><span>Shop</span></a>
+        <a href="/cart"><span class="icon">&#128722;</span><span>Cart</span></a>
+        <a href="/account"><span class="icon">&#128100;</span><span>Profile</span></a>
+      </nav>
       <div class="whatsapp-float"><a href="https://wa.me/8801602444532" target="_blank" title="WhatsApp">&#128172;</a></div>`;
   },
 

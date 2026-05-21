@@ -224,21 +224,38 @@ function gracefulShutdown(signal) {
 
 let server;
 
-function startServer() {
+async function startServer() {
   if (server) return server;
-  server = app.listen(config.port, config.host, () => {
+
+  if (config.db.type === 'mongodb') {
+    const mongoose = require('mongoose');
+    try {
+      await mongoose.connect(config.db.mongoUri);
+      console.log('MongoDB connected successfully');
+    } catch (err) {
+      console.error('MongoDB connection error:', err);
+      process.exit(1);
+    }
+  }
+
+  await DataService.init();
+
+  server = app.listen(config.port, config.host, async () => {
     console.log(`\n Medicine Bazar Server`);
     console.log(`   URL: http://${config.host === '0.0.0.0' ? 'localhost' : config.host}:${config.port}`);
     console.log(`   Env: ${config.env}`);
     console.log(`   Storage: ${config.db.type}`);
-    console.log(`   Products: ${require('./services/DataService').get('products').count()}`);
+    console.log(`   Products: ${await require('./services/DataService').get('products').count()}`);
     console.log('');
   });
   return server;
 }
 
 if (require.main === module) {
-  startServer();
+  startServer().catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

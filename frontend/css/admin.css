@@ -43,10 +43,16 @@
 .metric-bars strong { font-size: 20px; color: var(--text); }
 .metric-bars i { display: block; height: 12px; min-width: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--teal)); box-shadow: 0 6px 18px rgba(15,157,118,.18); }
 .metric-bars.stock i { background: linear-gradient(90deg, var(--trust-blue), var(--primary)); }
+.task-list { display: grid; gap: 10px; }
+.task-row { display: flex; justify-content: space-between; align-items: center; width: 100%; border: 1px solid var(--border); background: var(--white); border-radius: var(--radius-xs); padding: 12px 14px; text-align: left; font-weight: 700; }
+.task-row:hover { border-color: var(--primary); background: var(--panel); }
+.task-row strong { color: var(--primary); font-size: 20px; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* POS */
 .pos-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; height: calc(100vh - 120px); }
 .pos-products { overflow-y: auto; }
+.pos-shortcuts { margin-bottom: 12px; }
 .pos-search-box { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
 .pos-search-box input { min-width: 0; flex: 1; }
 .pos-search-box button { flex: 0 0 auto; min-width: 88px; }
@@ -61,6 +67,7 @@
 .pos-bill-footer { padding: 16px; border-top: 2px solid var(--border); }
 .pos-total { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
 .pos-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pos-actions .btn { min-height: 52px; }
 
 /* Admin Mobile */
 .admin-sidebar-toggle { display: none; background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer; }

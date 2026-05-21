@@ -90,7 +90,7 @@ fs.writeFileSync(path.join(pagesDir, 'search.html'), wrap('Search', 'অনু�
     document.getElementById('search-title').textContent = 'Search: "' + q + '"';
     const res = await MB.get('/search/products?q=' + encodeURIComponent(q) + '&limit=40');
     if (res.success) {
-      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No results found for "' + q + '"</h3><p>Try different keywords or browse categories</p></div>';
+      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No medicines found</h3><p>কোনো ওষুধ পাওয়া যায়নি। প্রেসক্রিপশন আপলোড করতে চান?</p><a class="btn btn-primary" href="/prescription-upload">Upload Prescription</a></div>';
     }
   });
 </script>`));
@@ -133,8 +133,11 @@ fs.writeFileSync(path.join(pagesDir, 'product-detail.html'), wrap('Product Detai
           <div style="margin-bottom:8px;font-size:14px;">\${(p.stockQuantity || 0) > 0 ? '<span style="color:var(--primary);">&#9989; In Stock (' + p.stockQuantity + ' available)</span>' : '<span style="color:var(--alert-red);">&#10060; Out of Stock</span>'}</div>
           <div style="display:flex;gap:10px;margin:20px 0;">
             <button class="btn btn-primary btn-lg" onclick="MB.addToCart('\${p.id}')" \${(p.stockQuantity || 0) <= 0 ? 'disabled' : ''}>Add to Cart</button>
+            <a class="btn btn-outline btn-lg" href="/prescription-upload">Upload Prescription</a>
+            <a class="btn btn-outline btn-lg" href="https://wa.me/8801602444532" target="_blank">Consult Pharmacist</a>
           </div>
-          <div class="card" style="margin-top:20px;">
+          <div class="card medicine-info-card" style="margin-top:20px;">
+            <h3>Medicine Overview</h3>
             \${p.uses || p.indication || (p.indications && p.indications.length) ? '<p><strong>Indication/Uses:</strong> ' + (p.uses || p.indication || p.indications.join(', ')) + '</p>' : ''}
             \${p.indicationDescription ? '<p><strong>Indication Description:</strong> ' + p.indicationDescription + '</p>' : ''}
             \${p.pharmacology ? '<p><strong>Pharmacology:</strong> ' + p.pharmacology + '</p>' : ''}
@@ -243,6 +246,8 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
             <div id="payment-details" style="margin-top:12px;display:none;">
               <div class="alert alert-info" id="payment-instruction"></div>
               <div class="form-group"><label>Transaction ID</label><input type="text" id="co-txid" class="form-control" placeholder="Enter transaction ID"></div>
+              <div class="form-group"><label>Payment screenshot/proof</label><input type="file" id="co-proof" class="form-control" accept="image/png,image/jpeg,image/webp,image/gif"><small style="color:var(--text-muted);">Upload screenshot after sending payment. Order will stay pending until admin verifies it.</small></div>
+              <div class="alert alert-warning">Payment status after order: pending verification. We never mark manual payment successful until admin review.</div>
             </div>
             <div class="form-group" style="margin-top:12px;"><label>Coupon Code</label><div style="display:flex;gap:8px;"><input type="text" id="co-coupon" class="form-control" placeholder="Enter coupon code"><button class="btn btn-outline btn-sm" onclick="applyCoupon()">Apply</button></div></div>
             <div class="form-group"><label>Order Note</label><textarea id="co-note" class="form-control" rows="2" placeholder="Any special instructions..."></textarea></div>
@@ -285,7 +290,8 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
     if (method !== 'cod') {
       details.style.display = 'block';
       const numbers = { nagad: '01602444532', bkash: '01602444532', upay: '01602444532', merchant: '01940826276' };
-      document.getElementById('payment-instruction').innerHTML = 'Send payment to: <strong>' + (numbers[method] || '') + '</strong> <button class="copy-btn" onclick="MB.copyText(\\'' + (numbers[method] || '') + '\\')">Copy</button><br>Then enter the Transaction ID below.';
+      const merchantLink = 'https://shop.bkash.com/bismillah-store01940826276/paymentlink';
+      document.getElementById('payment-instruction').innerHTML = 'Send payment to: <strong>' + (numbers[method] || '') + '</strong> <button class="copy-btn" onclick="MB.copyText(\\'' + (numbers[method] || '') + '\\')">Copy number</button>' + (method === 'merchant' ? ' <a class="btn btn-primary btn-sm" href="' + merchantLink + '" target="_blank">Open bKash merchant link</a>' : '') + '<br>Then enter the Transaction ID and upload payment screenshot.';
     } else { details.style.display = 'none'; }
   }
   function applyCoupon() { MB.toast('Coupon will be applied at order placement', 'info'); }
@@ -303,7 +309,17 @@ fs.writeFileSync(path.join(pagesDir, 'checkout.html'), wrap('Checkout', 'চে�
         couponCode: document.getElementById('co-coupon').value || null,
         note: document.getElementById('co-note').value || '',
       });
-      if (res.success) { await MB.del('/cart/clear'); MB.toast('Order placed successfully!', 'success'); setTimeout(() => window.location.href = '/account/orders', 1500); }
+      if (res.success) {
+        const proof = document.getElementById('co-proof')?.files?.[0];
+        if (proof && selectedPayment !== 'cod') {
+          const fd = new FormData();
+          fd.append('proof', proof);
+          await MB.upload('/orders/' + res.data.id + '/payment-proof', fd);
+        }
+        await MB.del('/cart/clear');
+        MB.toast(selectedPayment === 'cod' ? 'Order placed successfully!' : 'Order placed. Payment is pending admin verification.', 'success');
+        setTimeout(() => window.location.href = '/account/orders', 1500);
+      }
       else { MB.toast(res.message || 'Order failed', 'error'); }
     } catch (err) { MB.toast(err.message || 'Order failed', 'error'); }
   }

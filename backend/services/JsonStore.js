@@ -2,8 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 
-class JsonStore {
+const BaseStore = require('./BaseStore');
+
+class JsonStore extends BaseStore {
   constructor(filename) {
+    super(filename.replace('.json', ''));
     this.filePath = path.join(config.paths.database, filename);
     this._ensureFile();
   }

@@ -125,8 +125,8 @@ router.get('/customers', authenticate, authorize('admin', 'manager'), asyncHandl
 }));
 
 router.get('/search-logs', authenticate, authorize('admin', 'manager'), asyncHandler(async (req, res) => {
-  const logs = DataService.get('searchLogs').findAll({}).filter(l => l.resultCount === 0);
-  logs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const logs = DataService.get('searchLogs').findAll({}).filter(l => l.resultCount === 0 || l.noResultTerm);
+  logs.sort((a, b) => (b.createdAt || b.timestamp || '').localeCompare(a.createdAt || a.timestamp || ''));
   res.json({ success: true, data: logs.slice(0, 100) });
 }));
 
@@ -139,7 +139,9 @@ router.get('/analytics', authenticate, authorize('admin', 'manager'), asyncHandl
   const revenue = orders.reduce((s, o) => s + (o.total || 0), 0) + posSales.reduce((s, p) => s + (p.total || 0), 0);
   const topProducts = [...products].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0)).slice(0, 10)
     .map(p => ({ id: p.id, name: p.name, soldCount: p.soldCount || 0, stockQuantity: p.stockQuantity || 0 }));
-  const zeroResultSearches = searches.filter(s => s.resultCount === 0).slice(-20);
+  const zeroResultSearches = searches.filter(s => s.resultCount === 0 || s.noResultTerm)
+    .sort((a, b) => (b.createdAt || b.timestamp || '').localeCompare(a.createdAt || a.timestamp || ''))
+    .slice(0, 20);
   res.json({
     success: true,
     data: {

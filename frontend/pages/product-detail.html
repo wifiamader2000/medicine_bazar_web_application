@@ -59,8 +59,11 @@
           <div style="margin-bottom:8px;font-size:14px;">${(p.stockQuantity || 0) > 0 ? '<span style="color:var(--primary);">&#9989; In Stock (' + p.stockQuantity + ' available)</span>' : '<span style="color:var(--alert-red);">&#10060; Out of Stock</span>'}</div>
           <div style="display:flex;gap:10px;margin:20px 0;">
             <button class="btn btn-primary btn-lg" onclick="MB.addToCart('${p.id}')" ${(p.stockQuantity || 0) <= 0 ? 'disabled' : ''}>Add to Cart</button>
+            <a class="btn btn-outline btn-lg" href="/prescription-upload">Upload Prescription</a>
+            <a class="btn btn-outline btn-lg" href="https://wa.me/8801602444532" target="_blank">Consult Pharmacist</a>
           </div>
-          <div class="card" style="margin-top:20px;">
+          <div class="card medicine-info-card" style="margin-top:20px;">
+            <h3>Medicine Overview</h3>
             ${p.uses || p.indication || (p.indications && p.indications.length) ? '<p><strong>Indication/Uses:</strong> ' + (p.uses || p.indication || p.indications.join(', ')) + '</p>' : ''}
             ${p.indicationDescription ? '<p><strong>Indication Description:</strong> ' + p.indicationDescription + '</p>' : ''}
             ${p.pharmacology ? '<p><strong>Pharmacology:</strong> ' + p.pharmacology + '</p>' : ''}

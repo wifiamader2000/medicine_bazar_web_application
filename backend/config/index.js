@@ -9,12 +9,26 @@ const config = {
   sessionSecret: process.env.SESSION_SECRET || 'dev-session-secret-change-in-production',
 
   db: {
-    type: process.env.DB_TYPE || 'json',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    name: process.env.DB_NAME || 'medicine_bazar',
-    user: process.env.DB_USER || 'mb_admin',
-    password: process.env.DB_PASSWORD || '',
+    type: process.env.DB_DRIVER || process.env.DB_TYPE || 'json',
+    connectionString: process.env.DATABASE_URL || null,
+    mongoUri: process.env.MONGO_URI || null,
+    host: process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.POSTGRES_PORT || process.env.DB_PORT, 10) || 5432,
+    name: process.env.POSTGRES_DB || process.env.DB_NAME || 'medicine_bazar',
+    user: process.env.POSTGRES_USER || process.env.DB_USER || 'mb_admin',
+    password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || '',
+  },
+
+  search: {
+    provider: process.env.SEARCH_PROVIDER || 'local',
+    meilisearch: {
+      host: process.env.MEILISEARCH_HOST || 'http://localhost:7700',
+      apiKey: process.env.MEILISEARCH_API_KEY || '',
+    },
+    algolia: {
+      appId: process.env.ALGOLIA_APP_ID || '',
+      apiKey: process.env.ALGOLIA_API_KEY || '',
+    },
   },
 
   upload: {

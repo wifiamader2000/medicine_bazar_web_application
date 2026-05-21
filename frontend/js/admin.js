@@ -1,6 +1,6 @@
 /* Admin Panel JS */
 const ADMIN_ROLE_SECTIONS = {
-  admin: ['dashboard', 'orders', 'pos', 'products', 'import', 'categories', 'brands', 'media', 'banners', 'prescriptions', 'payments', 'lab-tests', 'pharmacy-apps', 'coupons', 'campaigns', 'blogs', 'reports-sales', 'reports-stock', 'reports-expiry', 'reports-refunds', 'analytics', 'users', 'settings', 'audit-logs'],
+  admin: ['dashboard', 'orders', 'pos', 'products', 'import', 'categories', 'brands', 'media', 'banners', 'prescriptions', 'payments', 'lab-tests', 'pharmacy-apps', 'coupons', 'campaigns', 'blogs', 'reports-sales', 'reports-stock', 'reports-expiry', 'reports-refunds', 'reports-search', 'analytics', 'users', 'settings', 'audit-logs'],
   cashier: ['pos'],
   pharmacist: ['prescriptions'],
 };
@@ -121,6 +121,7 @@ async function loadSection(section) {
       case 'reports-stock': title.textContent = 'Stock Report'; await loadStockReport(content); break;
       case 'reports-expiry': title.textContent = 'Expiry Report'; await loadExpiryReport(content); break;
       case 'reports-refunds': title.textContent = 'Refunds'; await loadRefundsReport(content); break;
+      case 'reports-search': title.textContent = 'Failed Searches'; await loadSearchReport(content); break;
       case 'analytics': title.textContent = 'Analytics'; await loadAnalytics(content); break;
       default: title.textContent = section; content.innerHTML = '<div class="empty-state"><h3>Section not found</h3></div>';
     }
@@ -156,6 +157,20 @@ async function loadDashboard(el) {
       <div class="chart-card"><h3>Stock Status</h3><div class="metric-bars stock">
         <div><span>Sold</span><strong>${d.soldPercentage}%</strong><i style="width:${d.soldPercentage}%"></i></div>
         <div><span>Remaining</span><strong>${d.remainingStockPercentage}%</strong><i style="width:${d.remainingStockPercentage}%"></i></div>
+      </div></div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card"><h3>Pending Tasks</h3><div class="task-list">
+        <button class="task-row" onclick="loadSection('orders')"><span>Pending Orders</span><strong>${d.pendingOrders}</strong></button>
+        <button class="task-row" onclick="loadSection('prescriptions')"><span>Pending Prescriptions</span><strong>${d.pendingPrescriptions}</strong></button>
+        <button class="task-row" onclick="loadSection('payments')"><span>Manual Payments</span><strong>${d.pendingPaymentVerification}</strong></button>
+        <button class="task-row" onclick="loadSection('reports-refunds')"><span>Refund Queue</span><strong>${d.totalRefunds}</strong></button>
+      </div></div>
+      <div class="chart-card"><h3>Quick Actions</h3><div class="quick-actions">
+        <button class="btn btn-primary" onclick="loadSection('pos')">Open POS</button>
+        <button class="btn btn-outline" onclick="loadSection('import')">Import Products</button>
+        <button class="btn btn-outline" onclick="loadSection('payments')">Verify Payments</button>
+        <button class="btn btn-outline" onclick="loadSection('reports-stock')">Stock Report</button>
       </div></div>
     </div>
     ${d.lowStockItems && d.lowStockItems.length > 0 ? '<div class="card"><h3 style="margin-bottom:12px;">Low Stock Items</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>' + d.lowStockItems.map(p => `<tr><td>${p.name}</td><td style="color:var(--alert-red);font-weight:700;">${p.stock}</td></tr>`).join('') + '</tbody></table></div></div>' : ''}`;
@@ -600,7 +615,8 @@ async function loadPOS(el) {
   el.innerHTML = `
     <div class="pos-layout">
       <div class="pos-products">
-        <div class="pos-search-box"><input type="text" id="pos-search" placeholder="Search product..." class="form-control"><button class="btn btn-primary btn-sm" onclick="posSearch()">Search</button></div>
+        <div class="alert alert-info pos-shortcuts">Shortcuts: F2 search/barcode, F8 print receipt, F9 cash payment, Esc clear bill.</div>
+        <div class="pos-search-box"><input type="text" id="pos-search" placeholder="Search product or scan barcode..." class="form-control" autocomplete="off"><button class="btn btn-primary btn-sm" onclick="posSearch()">Search</button></div>
         <div id="pos-results"></div>
       </div>
       <div class="pos-bill">
@@ -618,10 +634,13 @@ async function loadPOS(el) {
             <button class="btn btn-danger btn-lg" onclick="clearPosBill()">Clear</button>
           </div>
           <button class="btn btn-outline btn-block" id="pos-print-receipt" style="margin-top:12px;" onclick="printLastReceipt()" disabled>Print Receipt</button>
+          <button class="btn btn-outline btn-block" style="margin-top:12px;" onclick="refundPosSale()">Refund Sale</button>
           <button class="btn btn-outline btn-block" style="margin-top:12px;" onclick="closePosSession()">Close Session</button>
         </div>
       </div>
     </div>`;
+  bindPosShortcuts();
+  setTimeout(() => document.getElementById('pos-search')?.focus(), 50);
 }
 
 let posBillItems = [];
@@ -683,7 +702,30 @@ async function completeSale(method) {
   } else { MB.toast(res.message || 'Sale failed', 'error'); }
 }
 
+function bindPosShortcuts() {
+  document.onkeydown = (event) => {
+    if (!document.getElementById('pos-search')) return;
+    if (event.key === 'F2') { event.preventDefault(); document.getElementById('pos-search')?.focus(); }
+    if (event.key === 'F8') { event.preventDefault(); printLastReceipt(); }
+    if (event.key === 'F9') { event.preventDefault(); completeSale('cash'); }
+    if (event.key === 'Escape') { event.preventDefault(); clearPosBill(); }
+  };
+}
+
 function clearPosBill() { posBillItems = []; renderPosBill(); }
+
+async function refundPosSale() {
+  const saleId = prompt('Enter POS sale ID to refund:');
+  if (!saleId) return;
+  const reason = prompt('Refund reason:', 'Customer return') || 'Customer return';
+  const res = await MB.post('/pos/refund', { saleId, reason });
+  if (res.success) {
+    MB.toast(`Refund complete: ${MB.formatPrice(res.data.refundTotal)}`, 'success');
+    loadSection('pos');
+  } else {
+    MB.toast(res.message || 'Refund failed', 'error');
+  }
+}
 
 function printLastReceipt() {
   if (!lastPosSale) { MB.toast('Complete a sale first', 'error'); return; }
@@ -775,6 +817,111 @@ async function loadAnalytics(el) {
     </div>
     <div class="chart-grid" style="margin-top:16px;">
       <div class="chart-card"><h3>Top Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Sold</th><th>Stock</th></tr></thead><tbody>${(d.topProducts || []).map(p => `<tr><td>${p.name}</td><td>${p.soldCount}</td><td>${p.stockQuantity}</td></tr>`).join('') || '<tr><td colspan="3">No sales data yet</td></tr>'}</tbody></table></div></div>
-      <div class="chart-card"><h3>Zero-result Searches</h3><div class="table-wrap"><table><thead><tr><th>Query</th><th>Date</th></tr></thead><tbody>${(d.zeroResultSearches || []).map(s => `<tr><td>${s.query}</td><td>${MB.formatDate(s.createdAt)}</td></tr>`).join('') || '<tr><td colspan="2">No zero-result searches</td></tr>'}</tbody></table></div></div>
+      <div class="chart-card"><h3>Zero-result Searches</h3><div class="table-wrap"><table><thead><tr><th>Query</th><th>Date</th></tr></thead><tbody>${(d.zeroResultSearches || []).map(s => `<tr><td>${s.query}</td><td>${MB.formatDate(s.createdAt || s.timestamp)}</td></tr>`).join('') || '<tr><td colspan="2">No zero-result searches</td></tr>'}</tbody></table></div></div>
     </div>`;
+}
+
+async function loadSearchReport(el) {
+  const res = await MB.get('/reports/search-logs');
+  if (!res.success) {
+    el.innerHTML = '<div class="alert alert-error">Failed to load search logs</div>';
+    return;
+  }
+  const logs = res.data || [];
+  
+  // Calculate top failed search queries
+  const queryCounts = {};
+  logs.forEach(log => {
+    const q = (log.query || log.noResultTerm || '').trim().toLowerCase();
+    if (q) {
+      queryCounts[q] = (queryCounts[q] || 0) + 1;
+    }
+  });
+  
+  const topFailed = Object.entries(queryCounts)
+    .map(([query, count]) => ({ query, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="label">Total Failed Searches</div>
+        <div class="value">${logs.length}</div>
+        <div class="sub">Last 100 failed searches</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">Unique Failed Queries</div>
+        <div class="value">${Object.keys(queryCounts).length}</div>
+        <div class="sub">Unique terms missing</div>
+      </div>
+    </div>
+    
+    <div class="chart-grid" style="margin-top:16px;">
+      <div class="chart-card">
+        <h3>Top Failed Queries</h3>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">What your customers are looking for, but not finding.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Query</th>
+                <th>Search Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topFailed.map(item => `
+                <tr>
+                  <td><strong style="color:var(--alert-red);">${item.query}</strong></td>
+                  <td><strong>${item.count}</strong> times</td>
+                </tr>
+              `).join('') || '<tr><td colspan="2">No failed queries recorded yet</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <h3>Search Logs Analysis</h3>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">Summary breakdown of search sources.</p>
+        <div class="metric-bars">
+          ${(() => {
+            const sources = {};
+            logs.forEach(l => { sources[l.source || 'unknown'] = (sources[l.source || 'unknown'] || 0) + 1; });
+            return Object.entries(sources).map(([src, cnt]) => {
+              const pct = logs.length > 0 ? Math.round((cnt / logs.length) * 100) : 0;
+              const sourceLabel = src === 'search_products' ? 'Product Search' : src === 'search_suggestions' ? 'Autocomplete Suggestions' : src;
+              return `<div><span>${sourceLabel}</span><strong>${cnt} (${pct}%)</strong><i style="width:${pct}%"></i></div>`;
+            }).join('') || '<div><span>No sources recorded</span><strong>0</strong><i style="width:0%"></i></div>';
+          })()}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Recent Failed Searches</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Query</th>
+              <th>Source</th>
+              <th>Filters</th>
+              <th>Date/Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map(log => `
+              <tr>
+                <td><strong style="color:var(--alert-red);">${log.query || log.noResultTerm || ''}</strong></td>
+                <td><span class="badge-role select" style="background:var(--bg);color:var(--text-secondary);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:11px;">${log.source || 'unknown'}</span></td>
+                <td><small style="color:var(--text-muted);">${log.filters && Object.keys(log.filters).length > 0 ? JSON.stringify(log.filters) : '-'}</small></td>
+                <td>${MB.formatDate(log.timestamp || log.createdAt)}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No recent failed searches. Your users are finding everything!</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }

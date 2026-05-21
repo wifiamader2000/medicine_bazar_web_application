@@ -5,14 +5,19 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
+    "start:api": "node backend/server.js",
     "dev": "node backend/server.js",
-    "test": "node --test backend/tests/index.test.js",
+    "dev:react": "cd frontend-react && npm run dev",
     "build": "node scripts/build.js",
+    "build:react": "cd frontend-react && npm run build",
+    "preview:react": "cd frontend-react && npm run preview",
+    "test": "node --test backend/tests/index.test.js",
     "lint": "echo 'Lint passed'",
     "seed": "node scripts/seed.js",
     "import": "node scripts/import-medicines.js",
     "migrate": "node scripts/migrate.js",
-    "backup": "node scripts/backup.js"
+    "backup": "node scripts/backup.js",
+    "backup:daily": "node scripts/backup.js"
   },
   "keywords": [
     "pharmacy",
@@ -35,8 +40,12 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "knex": "^3.2.10",
+    "mongoose": "^9.6.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.22.3",
+    "pg": "^8.21.0",
     "sharp": "^0.33.5"
   },
   "engines": {

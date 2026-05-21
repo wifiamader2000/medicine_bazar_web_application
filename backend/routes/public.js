@@ -4,11 +4,36 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const DataService = require('../services/DataService');
 const config = require('../config');
 
-router.get('/health', (req, res) => {
+router.get('/health', asyncHandler(async (req, res) => {
   const storageMode = DataService.getStorageMode();
-  const productCount = DataService.get('products').count();
   const isProduction = config.isProduction();
   const usingJson = config.isUsingJsonStore();
+
+  let dbStatus = 'not_applicable';
+  if (!usingJson) {
+    const knex = require('../config/db');
+    if (knex) {
+      try {
+        await knex.raw('SELECT 1');
+        dbStatus = 'connected';
+      } catch (err) {
+        dbStatus = 'disconnected';
+      }
+    } else {
+      dbStatus = 'failed_initialization';
+    }
+  }
+
+  const dataCounts = {
+    users: DataService.get('users').count(),
+    products: DataService.get('products').count(),
+    orders: DataService.get('orders').count(),
+    payments: DataService.get('payments').count(),
+    prescriptions: DataService.get('prescriptions').count(),
+    posSales: DataService.get('posSales').count(),
+    settings: DataService.get('settings').count(),
+    media: DataService.get('media').count()
+  };
 
   res.json({
     success: true,
@@ -16,13 +41,15 @@ router.get('/health', (req, res) => {
       status: 'healthy',
       version: '1.0.0',
       storageMode,
-      productCount,
+      dbStatus,
+      productCount: dataCounts.products,
+      dataCounts,
       environment: config.env,
       warning: isProduction && usingJson ? 'Production is using JSON file-store. Connect a database.' : null,
       timestamp: new Date().toISOString(),
     },
   });
-});
+}));
 
 router.get('/branding', asyncHandler(async (req, res) => {
   let settings = DataService.get('settings').findAll({});

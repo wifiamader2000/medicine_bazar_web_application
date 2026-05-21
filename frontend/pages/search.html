@@ -36,7 +36,7 @@
     document.getElementById('search-title').textContent = 'Search: "' + q + '"';
     const res = await MB.get('/search/products?q=' + encodeURIComponent(q) + '&limit=40');
     if (res.success) {
-      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No results found for "' + q + '"</h3><p>Try different keywords or browse categories</p></div>';
+      document.getElementById('search-results').innerHTML = res.data.length > 0 ? res.data.map(p => MB.productCardHTML(p)).join('') : '<div class="empty-state"><h3>No medicines found</h3><p>কোনো ওষুধ পাওয়া যায়নি। প্রেসক্রিপশন আপলোড করতে চান?</p><a class="btn btn-primary" href="/prescription-upload">Upload Prescription</a></div>';
     }
   });
 </script>

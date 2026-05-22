@@ -106,7 +106,7 @@ const ProductDetail = () => {
   const savingsPercent = hasSavings && currentPrice > 0 ? Math.round((savingsAmount / currentPrice) * 100) : 0;
 
   return (
-    <div className="space-y-8 pb-24 md:pb-8">
+    <div className="space-y-8 pb-36 md:pb-8">
       {/* Product Details Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
@@ -485,7 +485,7 @@ const ProductDetail = () => {
       )}
 
       {/* Mobile Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 md:hidden flex items-center justify-between gap-4 animate-fade-up">
+      <div className="fixed bottom-[56px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 md:hidden flex items-center justify-between gap-4 animate-fade-up">
         <div className="flex flex-col">
           <span className="text-xs text-slate-400 font-bold uppercase">{displayName.length > 18 ? displayName.substring(0, 18) + '...' : displayName}</span>
           <span className="text-xl font-extrabold text-slate-800">{formatPrice(currentPrice)}</span>

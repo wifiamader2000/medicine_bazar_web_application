@@ -388,12 +388,14 @@ const ERPDashboard = () => {
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="colorOnline" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                              <stop offset="0%" stopColor="#10B981" stopOpacity={0.4}/>
+                              <stop offset="50%" stopColor="#06B6D4" stopOpacity={0.25}/>
+                              <stop offset="100%" stopColor="#00F2FE" stopOpacity={0.02}/>
                             </linearGradient>
                             <linearGradient id="colorPos" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                              <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.4}/>
+                              <stop offset="50%" stopColor="#3B82F6" stopOpacity={0.25}/>
+                              <stop offset="100%" stopColor="#6366F1" stopOpacity={0.02}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
@@ -401,8 +403,8 @@ const ERPDashboard = () => {
                           <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `৳${val}`} />
                           <Tooltip contentStyle={{ background: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`৳${value}`, '']} />
                           <Legend verticalAlign="top" height={36} iconType="circle" />
-                          <Area type="monotone" dataKey="online" name="Online Store" stroke="#10b981" fillOpacity={1} fill="url(#colorOnline)" strokeWidth={2} />
-                          <Area type="monotone" dataKey="pos" name="POS Terminals" stroke="#3b82f6" fillOpacity={1} fill="url(#colorPos)" strokeWidth={2} />
+                          <Area type="monotone" dataKey="online" name="Online Store" stroke="#10B981" fillOpacity={1} fill="url(#colorOnline)" strokeWidth={3.5} activeDot={{ r: 6 }} />
+                          <Area type="monotone" dataKey="pos" name="POS Terminals" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorPos)" strokeWidth={3.5} activeDot={{ r: 6 }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -420,22 +422,22 @@ const ERPDashboard = () => {
                       {/* Online Checkouts */}
                       <div>
                         <div className="flex justify-between items-center text-sm font-semibold text-gray-700 mb-2">
-                          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-primary"></span> Online Checkout</span>
+                          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Online Checkout</span>
                           <span>{formatPrice(onlineTotal)} ({onlinePercent}%)</span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-3">
-                          <div className="bg-primary h-3 rounded-full transition-all duration-500" style={{ width: `${onlinePercent}%` }}></div>
+                          <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-3 rounded-full transition-all duration-500" style={{ width: `${onlinePercent}%` }}></div>
                         </div>
                       </div>
 
                       {/* POS sales */}
                       <div>
                         <div className="flex justify-between items-center text-sm font-semibold text-gray-700 mb-2">
-                          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500"></span> POS Checkout</span>
+                          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-violet-500"></span> POS Checkout</span>
                           <span>{formatPrice(posTotal)} ({posPercent}%)</span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-3">
-                          <div className="bg-blue-500 h-3 rounded-full transition-all duration-500" style={{ width: `${posPercent}%` }}></div>
+                          <div className="bg-gradient-to-r from-violet-500 to-indigo-500 h-3 rounded-full transition-all duration-500" style={{ width: `${posPercent}%` }}></div>
                         </div>
                       </div>
 

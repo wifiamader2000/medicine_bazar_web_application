@@ -161,7 +161,7 @@ const PublicLayout = () => {
 
       {/* 5. Main Content Area */}
       <main className="flex-1 bg-transparent">
-        <div className="max-w-7xl mx-auto px-4 py-6 md:py-10">
+        <div className="max-w-7xl mx-auto px-4 pt-6 pb-20 md:py-10">
           <Outlet />
         </div>
       </main>

@@ -34,6 +34,12 @@ import BannerManager from './pages/admin/BannerManager';
 import InventoryManager from './pages/admin/InventoryManager';
 import PrescriptionQueue from './pages/admin/PrescriptionQueue';
 import Settings from './pages/admin/Settings';
+import AccountingDashboard from './pages/admin/AccountingDashboard';
+import DayClosing from './pages/admin/DayClosing';
+import CustomerCRM from './pages/admin/CustomerCRM';
+import ExportCenter from './pages/admin/ExportCenter';
+import NotificationTemplates from './pages/admin/NotificationTemplates';
+import PaymentGateways from './pages/admin/PaymentGateways';
 
 // POS Page
 import POSPage from './pages/pos/POSPage';
@@ -73,6 +79,12 @@ const App = () => {
           <Route path="inventory" element={<InventoryManager />} />
           <Route path="prescriptions" element={<PrescriptionQueue />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="accounting" element={<AccountingDashboard />} />
+          <Route path="day-closing" element={<DayClosing />} />
+          <Route path="customers" element={<CustomerCRM />} />
+          <Route path="export" element={<ExportCenter />} />
+          <Route path="notifications" element={<NotificationTemplates />} />
+          <Route path="payment-gateways" element={<PaymentGateways />} />
         </Route>
 
         {/* POS Route */}

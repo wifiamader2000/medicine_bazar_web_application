@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, ClipboardCheck, Package, Truck, MessageSquare, ArrowRight, Printer, QrCode } from 'lucide-react';
+import { CheckCircle, Clock, ClipboardCheck, Package, Truck, MessageSquare, ArrowRight, Printer, QrCode, FileText, Download } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { formatPrice } from '../../utils/apiData';
 import Button from '../../components/common/Button';
+import InvoiceTemplate from '../../components/invoice/InvoiceTemplate';
 
 const OrderSuccess = () => {
   const { language, t } = useLanguage();
@@ -21,6 +22,7 @@ const OrderSuccess = () => {
 
   const token = localStorage.getItem('token');
   const isGuest = !token;
+  const [showInvoice, setShowInvoice] = useState(false);
 
   // Formulate WhatsApp message with dynamic Order ID
   const whatsappNumber = '8801602444532';
@@ -327,6 +329,15 @@ const OrderSuccess = () => {
               {language === 'en' ? 'Print Clean Receipt' : 'রসিদ প্রিন্ট করুন'}
             </button>
 
+            {/* Download Invoice Button */}
+            <button
+              onClick={() => setShowInvoice(true)}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 cursor-pointer text-sm"
+            >
+              <Download size={18} />
+              {language === 'en' ? 'Download Invoice' : 'ইনভয়েস ডাউনলোড করুন'}
+            </button>
+
             {/* WhatsApp Contact Button */}
             <a
               href={whatsappUrl}
@@ -379,6 +390,11 @@ const OrderSuccess = () => {
           </p>
         </div>
       </div>
+
+      {/* Invoice Modal */}
+      {showInvoice && order && (
+        <InvoiceTemplate order={order} onClose={() => setShowInvoice(false)} />
+      )}
     </div>
   );
 };

@@ -54,7 +54,7 @@ router.get('/current-session', authenticate, authorize('admin', 'cashier', 'mana
 }));
 
 router.post('/sale', authenticate, authorize('admin', 'cashier', 'manager'), asyncHandler(async (req, res) => {
-  const { items, paymentMethod = 'cash', customerPhone, discount = 0 } = req.body;
+  const { items, paymentMethod = 'cash', customerPhone, customerId, discount = 0, paidAmount, dueAmount } = req.body;
   if (!items || items.length === 0) {
     return res.status(400).json({ success: false, message: 'No items in bill' });
   }
@@ -89,6 +89,54 @@ router.post('/sale', authenticate, authorize('admin', 'cashier', 'manager'), asy
   }
 
   const total = subtotal - parseFloat(discount);
+  
+  // Calculate final paid/due amounts with fallback for older frontends
+  const finalPaidAmount = paidAmount !== undefined ? parseFloat(paidAmount) : total;
+  const finalDueAmount = dueAmount !== undefined ? parseFloat(dueAmount) : 0;
+  
+  if (finalDueAmount > 0 && Math.abs((finalPaidAmount + finalDueAmount) - total) > 0.1) {
+    return res.status(400).json({ success: false, message: 'Paid + Due must equal Total Payable' });
+  }
+
+  // Handle Due Sale Customer requirement
+  let targetCustomer = null;
+  const normPhone = customerPhone ? customerPhone.replace(/\D/g, '').slice(-11) : '';
+
+  if (finalDueAmount > 0) {
+    if (!normPhone && !customerId) {
+      return res.status(400).json({ success: false, message: 'Customer is required for due sale', messageBn: 'Due sale করতে customer select/create করতে হবে।' });
+    }
+    
+    if (customerId) {
+      targetCustomer = DataService.get('customers').findById(customerId);
+    } else if (normPhone) {
+      targetCustomer = DataService.get('customers').findAll({}).find(c => c.phone === normPhone);
+      // Create walk_in if not exists
+      if (!targetCustomer) {
+        targetCustomer = DataService.get('customers').create({
+          name: '',
+          phone: normPhone,
+          email: '',
+          address: '',
+          customerType: 'walk_in',
+          totalPurchase: 0,
+          totalPaid: 0,
+          dueBalance: 0,
+          lastVisitAt: null,
+          notes: ''
+        });
+      }
+    }
+
+    if (!targetCustomer) {
+      return res.status(400).json({ success: false, message: 'Could not resolve customer for due sale' });
+    }
+  } else if (normPhone || customerId) {
+    // Attempt to link even if no due
+    if (customerId) targetCustomer = DataService.get('customers').findById(customerId);
+    else targetCustomer = DataService.get('customers').findAll({}).find(c => c.phone === normPhone);
+  }
+
   const invoiceNumber = 'POS-' + Date.now().toString(36).toUpperCase();
 
   const sale = DataService.get('posSales').create({
@@ -100,8 +148,11 @@ router.post('/sale', authenticate, authorize('admin', 'cashier', 'manager'), asy
     subtotal,
     discount: parseFloat(discount),
     total,
+    paidAmount: finalPaidAmount,
+    dueAmount: finalDueAmount,
     paymentMethod,
-    customerPhone: customerPhone || '',
+    customerId: targetCustomer ? targetCustomer.id : null,
+    customerPhone: normPhone || customerPhone || '',
     saleType: 'pos',
     refunded: false,
   });
@@ -117,9 +168,37 @@ router.post('/sale', authenticate, authorize('admin', 'cashier', 'manager'), asy
   }
 
   DataService.get('posSessions').update(session.id, {
-    totalSales: (session.totalSales || 0) + total,
+    totalSales: (session.totalSales || 0) + finalPaidAmount, // Only add realized cash to session drawer
     salesCount: (session.salesCount || 0) + 1,
   });
+
+  // CRM Update
+  if (targetCustomer) {
+    const newPurchase = (targetCustomer.totalPurchase || 0) + total;
+    const newPaid = (targetCustomer.totalPaid || 0) + finalPaidAmount;
+    const newDue = (targetCustomer.dueBalance || 0) + finalDueAmount;
+
+    DataService.get('customers').update(targetCustomer.id, {
+      totalPurchase: newPurchase,
+      totalPaid: newPaid,
+      dueBalance: newDue,
+      lastVisitAt: new Date().toISOString()
+    });
+
+    DataService.get('customerLedgers').create({
+      customerId: targetCustomer.id,
+      date: new Date().toISOString(),
+      type: finalDueAmount > 0 ? 'due_added' : 'purchase',
+      referenceType: 'pos_sale',
+      referenceId: sale.id,
+      amount: total,
+      paidAmount: finalPaidAmount,
+      dueAmount: finalDueAmount,
+      paymentMethod,
+      note: 'POS Sale',
+      createdBy: req.user.name || req.user.email
+    });
+  }
 
   logAudit(req, 'pos_sale', { saleId: sale.id, invoiceNumber, total });
   res.status(201).json({ success: true, data: sale });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, Package, Calculator, Image as ImageIcon, Box, FileText } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Package, Calculator, Image as ImageIcon, Box, FileText, Users, ShoppingCart, Download, Bell, CreditCard } from 'lucide-react';
 import { getStoredUser, clearStoredAuth } from '../utils/auth';
 
 const AdminLayout = () => {
@@ -22,11 +22,19 @@ const AdminLayout = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { name: 'Accounting / ERP', path: '/admin/erp', icon: Calculator },
+    { name: 'Accounting', path: '/admin/accounting', icon: Calculator },
+    { name: 'Customers / CRM', path: '/admin/customers', icon: Users },
+    { name: 'Invoices', path: '/admin/invoices', icon: FileText },
+    { name: 'Online Orders', path: '/admin/orders', icon: ShoppingCart },
+    { name: 'Day Closing', path: '/admin/day-closing', icon: FileText },
+    { name: 'Legacy ERP', path: '/admin/erp', icon: Box },
     { name: 'Prescription Queue', path: '/admin/prescriptions', icon: FileText },
     { name: 'Banners', path: '/admin/banners', icon: ImageIcon },
     { name: 'Inventory & POS', path: '/admin/inventory', icon: Box },
     { name: 'Mega Catalog', path: '/admin/products', icon: Package },
+    { name: 'Export Center', path: '/admin/export', icon: Download },
+    { name: 'Notifications', path: '/admin/notifications', icon: Bell },
+    { name: 'Payment Gateways', path: '/admin/payment-gateways', icon: CreditCard },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 

@@ -6,6 +6,7 @@ import { clearStoredAuth, getStoredUser } from '../../utils/auth';
 import POSCart from '../../components/pos/POSCart';
 import POSPaymentPanel from '../../components/pos/POSPaymentPanel';
 import POSReceipt from '../../components/pos/POSReceipt';
+import POSReceiptPDF from '../../components/pos/POSReceiptPDF';
 import POSSearch from '../../components/pos/POSSearch';
 import Button from '../../components/common/Button';
 import { formatPrice, productPrice, unwrapData } from '../../utils/apiData';
@@ -25,6 +26,7 @@ const POSPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastOrder, setLastOrder] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   // Held Carts State
   const [heldCarts, setHeldCarts] = useState(() => {
@@ -225,28 +227,31 @@ const POSPage = () => {
         })),
         paymentMethod: paymentDetails.paymentMethod,
         customerPhone: paymentDetails.customerPhone,
+        customerId: paymentDetails.customerId,
         discount: paymentDetails.discount,
+        paidAmount: paymentDetails.paidAmount,
+        dueAmount: paymentDetails.dueAmount
       };
       const response = await api.post('/pos/sale', salePayload);
       const sale = unwrapData(response);
 
-      setLastOrder({
+      const completedOrder = {
         ...sale,
         orderNumber: sale.invoiceNumber,
         cashierName: user.name,
         tenderedAmount: paymentDetails.tenderedAmount,
         change: paymentDetails.change,
-      });
+      };
+      setLastOrder(completedOrder);
+      setShowReceipt(true);
       setCart([]);
       setDiscount(0);
       setCustomerPhone('');
       setSession((current) => current ? {
         ...current,
-        totalSales: (current.totalSales || 0) + (sale.total || 0),
+        totalSales: (current.totalSales || 0) + (sale.paidAmount !== undefined ? sale.paidAmount : (sale.total || 0)),
         salesCount: (current.salesCount || 0) + 1,
       } : current);
-
-      setTimeout(() => handlePrint(), 100);
     } catch (err) {
       setError(err.response?.data?.message || t('pos.failedProcessSale'));
     } finally {
@@ -254,16 +259,8 @@ const POSPage = () => {
     }
   };
 
-  const handlePrint = () => {
-    if (receiptRef.current) {
-      const printContents = receiptRef.current.innerHTML;
-      const originalContents = document.body.innerHTML;
-
-      document.body.innerHTML = printContents;
-      window.print();
-      document.body.innerHTML = originalContents;
-      window.location.reload();
-    }
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
   };
 
   const handleLogout = () => {
@@ -398,6 +395,11 @@ const POSPage = () => {
       </div>
 
       <POSReceipt order={lastOrder} componentRef={receiptRef} />
+
+      {/* Enhanced Receipt Modal */}
+      {showReceipt && lastOrder && (
+        <POSReceiptPDF order={lastOrder} onClose={handleCloseReceipt} />
+      )}
     </div>
   );
 };

@@ -52,6 +52,10 @@ const stores = {
   addresses: new StoreClass('mb_addresses.json'),
   wishlist: new StoreClass('mb_wishlist.json'),
   transactions: new StoreClass('mb_transactions.json'),
+  customers: new StoreClass('mb_customers.json'),
+  customerLedgers: new StoreClass('mb_customer_ledgers.json'),
+  notificationTemplates: new StoreClass('mb_notification_templates.json'),
+  notificationLogs: new StoreClass('mb_notification_logs.json'),
 };
 
 class DataService {

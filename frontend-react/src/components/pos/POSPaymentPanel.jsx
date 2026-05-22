@@ -14,13 +14,33 @@ const POSPaymentPanel = ({ subtotal, discount, setDiscount, customerPhone, setCu
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [tenderedAmount, setTenderedAmount] = useState('');
   
+  const [customerData, setCustomerData] = useState(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  
   const total = Math.max(0, subtotal - discount);
-  const change = Math.max(0, (parseFloat(tenderedAmount) || 0) - total);
+  const parsedTendered = tenderedAmount === '' ? total : parseFloat(tenderedAmount) || 0;
+  
+  const change = Math.max(0, parsedTendered - total);
+  const due = Math.max(0, total - parsedTendered);
+  
+  // Customer Lookup effect
+  useEffect(() => {
+    const phone = customerPhone.replace(/\D/g, '');
+    if (phone.length >= 11) {
+      setCustomerLoading(true);
+      api.get(`/customers/phone/${phone}`)
+        .then(res => setCustomerData(res.data.data))
+        .catch(() => setCustomerData(null))
+        .finally(() => setCustomerLoading(false));
+    } else {
+      setCustomerData(null);
+    }
+  }, [customerPhone]);
 
-  // Keyboard shortcut F8 to checkout
+  // Keyboard shortcut F9 to checkout
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'F8' && total > 0) {
+      if (e.key === 'F9' && total > 0) {
         e.preventDefault();
         handleCheckout();
       }
@@ -30,13 +50,21 @@ const POSPaymentPanel = ({ subtotal, discount, setDiscount, customerPhone, setCu
   }, [total, paymentMethod, tenderedAmount, customerPhone, discount]);
 
   const handleCheckout = () => {
+    if (due > 0 && !customerPhone) {
+      alert('Due sale করতে customer select/create করতে হবে। (Phone number is required for due sale)');
+      return;
+    }
+  
     const safeDiscount = Math.min(discount, subtotal);
     onCheckout({
       paymentMethod,
-      tenderedAmount: parseFloat(tenderedAmount) || total,
+      tenderedAmount: parsedTendered,
+      paidAmount: total - due, // Actual paid towards the bill
+      dueAmount: due,
       change,
       discount: safeDiscount,
       customerPhone,
+      customerId: customerData?.id,
       total
     });
   };
@@ -47,14 +75,34 @@ const POSPaymentPanel = ({ subtotal, discount, setDiscount, customerPhone, setCu
         
         {/* Customer Info */}
         <section>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Customer Phone (Optional)</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex justify-between">
+            <span>Customer Phone (F8)</span>
+            {customerLoading && <span className="text-primary text-xs">Searching...</span>}
+          </label>
           <input
             type="tel"
-            className="w-full rounded-xl border border-gray-300 p-3 focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+            className={`w-full rounded-xl border ${due > 0 && !customerPhone ? 'border-rose-400 bg-rose-50 ring-1 ring-rose-400' : 'border-gray-300'} p-3 focus:border-primary focus:ring-1 focus:ring-primary shadow-sm`}
             placeholder="01XXXXXXXXX"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
           />
+          {due > 0 && !customerPhone && (
+            <div className="text-xs text-rose-600 mt-1 font-bold">Required for Due Sale</div>
+          )}
+          
+          {customerData && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+              <div className="font-bold text-blue-900">{customerData.name || 'Walk-in Customer'}</div>
+              {customerData.dueBalance > 0 && (
+                <div className="text-rose-600 font-bold mt-1">Previous Due: {formatPrice(customerData.dueBalance)}</div>
+              )}
+            </div>
+          )}
+          {customerPhone.length >= 11 && !customerData && !customerLoading && (
+            <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+              New customer will be created automatically.
+            </div>
+          )}
         </section>
 
         {/* Calculation */}
@@ -110,25 +158,34 @@ const POSPaymentPanel = ({ subtotal, discount, setDiscount, customerPhone, setCu
           </div>
         </section>
 
-        {/* Cash Tendered */}
-        {paymentMethod === 'cash' && (
-          <section>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Tendered</label>
-            <input
-              type="number"
-              className="w-full rounded-xl border border-gray-300 p-3 text-xl font-bold focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
-              placeholder={total.toString()}
-              value={tenderedAmount}
-              onChange={(e) => setTenderedAmount(e.target.value)}
-            />
-            {tenderedAmount > total && (
-              <div className="mt-3 bg-green-50 text-green-800 p-3 rounded-lg border border-green-200 flex justify-between items-center">
-                <span className="font-medium">Change Due:</span>
-                <span className="font-bold text-xl">{formatPrice(change)}</span>
-              </div>
-            )}
-          </section>
-        )}
+        {/* Amount Tendered */}
+        <section>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Tendered</label>
+          <input
+            type="number"
+            min="0"
+            step="any"
+            className="w-full rounded-xl border border-gray-300 p-3 text-xl font-bold focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+            placeholder={total.toString()}
+            value={tenderedAmount}
+            onChange={(e) => setTenderedAmount(e.target.value)}
+          />
+          
+          {change > 0 && (
+            <div className="mt-3 bg-emerald-50 text-emerald-800 p-3 rounded-lg border border-emerald-200 flex justify-between items-center">
+              <span className="font-medium">Change Due:</span>
+              <span className="font-bold text-xl">{formatPrice(change)}</span>
+            </div>
+          )}
+
+          {due > 0 && (
+            <div className="mt-3 bg-rose-50 text-rose-800 p-3 rounded-lg border border-rose-200 flex justify-between items-center">
+              <span className="font-medium">Sale Due Amount:</span>
+              <span className="font-bold text-xl">{formatPrice(due)}</span>
+            </div>
+          )}
+        </section>
+
       </div>
 
       <div className="p-5 bg-white border-t border-gray-200">
@@ -136,13 +193,13 @@ const POSPaymentPanel = ({ subtotal, discount, setDiscount, customerPhone, setCu
           fullWidth 
           size="lg" 
           onClick={handleCheckout} 
-          disabled={subtotal === 0 || loading}
+          disabled={subtotal === 0 || loading || (due > 0 && !customerPhone)}
           loading={loading}
           className="h-16 text-xl shadow-lg"
         >
           <div className="flex items-center justify-center gap-2">
             <Calculator size={24} />
-            PAY {formatPrice(total)} (F8)
+            PAY {formatPrice(total)} (F9)
           </div>
         </Button>
       </div>

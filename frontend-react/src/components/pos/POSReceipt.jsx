@@ -77,7 +77,18 @@ const POSReceipt = ({ order, componentRef }) => {
             <span>Payment Method:</span>
             <span className="uppercase">{order.paymentMethod || 'CASH'}</span>
           </div>
-          {(order.tenderedAmount && order.tenderedAmount > 0) ? (
+          {(order.dueAmount > 0) ? (
+            <>
+              <div className="flex justify-between mt-1 text-xs text-rose-600 font-bold">
+                <span>Sale Due:</span>
+                <span>{formatPrice(order.dueAmount)}</span>
+              </div>
+              <div className="flex justify-between mt-1 text-xs">
+                <span>Paid Today:</span>
+                <span>{formatPrice(order.paidAmount)}</span>
+              </div>
+            </>
+          ) : (order.tenderedAmount && order.tenderedAmount > order.total) ? (
             <>
               <div className="flex justify-between mt-1 text-xs">
                 <span>Tendered:</span>

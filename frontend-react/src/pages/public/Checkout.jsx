@@ -40,6 +40,7 @@ const Checkout = () => {
   const [prescriptionFile, setPrescriptionFile] = useState(null);
   const [prescriptionUploading, setPrescriptionUploading] = useState(false);
   const [copiedId, setCopiedId] = useState('');
+  const [gatewayStatus, setGatewayStatus] = useState(null);
 
   // Shipping details state
   const [shippingAddress, setShippingAddress] = useState({
@@ -69,6 +70,11 @@ const Checkout = () => {
   };
 
   useEffect(() => {
+    // Fetch Gateway status
+    api.get('/gateways/status')
+      .then(res => setGatewayStatus(unwrapData(res)))
+      .catch(err => console.error('Failed to load gateways', err));
+
     if (cart.length === 0) {
       setProducts([]);
       return;
@@ -699,8 +705,50 @@ const Checkout = () => {
                   <p className="text-xs text-muted mt-1.5 ml-8">
                     Click paylink, make payment, then copy/paste TrxID below for automated queue review.
                   </p>
+                  </div>
+
+                  {/* === NEW AUTOMATED GATEWAYS (FUTURE-READY) === */}
+                  <div className="sm:col-span-2 mt-4 mb-2">
+                    <h5 className="text-xs font-black text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <span>Automated Gateways</span>
+                      <Badge variant="warning" className="text-[9px] py-0">Coming Soon</Badge>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* bKash Auto */}
+                      <div className="rounded-xl p-3 border-2 border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0"></span>
+                          <span className="font-extrabold text-[#D12053] text-sm">bKash Auto</span>
+                        </div>
+                        <p className="text-[10px] text-muted ml-6">
+                          {gatewayStatus?.bkash?.enabled ? 'Select to pay via bKash' : 'Gateway not configured'}
+                        </p>
+                      </div>
+                      
+                      {/* Nagad Auto */}
+                      <div className="rounded-xl p-3 border-2 border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0"></span>
+                          <span className="font-extrabold text-[#F06222] text-sm">Nagad Auto</span>
+                        </div>
+                        <p className="text-[10px] text-muted ml-6">
+                          {gatewayStatus?.nagad?.enabled ? 'Select to pay via Nagad' : 'Gateway not configured'}
+                        </p>
+                      </div>
+
+                      {/* SSLCommerz */}
+                      <div className="rounded-xl p-3 border-2 border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0"></span>
+                          <span className="font-extrabold text-slate-700 text-sm">SSLCommerz</span>
+                        </div>
+                        <p className="text-[10px] text-muted ml-6">
+                          {gatewayStatus?.sslcommerz?.enabled ? 'Cards & Mobile Banking' : 'Gateway not configured'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
               {/* Render Instructions if manual/merchant payment selected */}
               {paymentMethod !== 'cod' && (

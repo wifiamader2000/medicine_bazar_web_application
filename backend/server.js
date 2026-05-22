@@ -135,6 +135,12 @@ app.use('/api/v1/pharmacy', require('./routes/pharmacy'));
 app.use('/api/v1/blogs', require('./routes/blogs'));
 app.use('/api/v1/reports', require('./routes/reports'));
 app.use('/api/v1/erp', require('./routes/erp'));
+app.use('/api/v1/invoices', require('./routes/invoices'));
+app.use('/api/v1/accounting', require('./routes/accounting'));
+app.use('/api/v1/customers', require('./routes/customers'));
+app.use('/api/v1/export', require('./routes/export'));
+app.use('/api/v1/notifications', require('./routes/notifications'));
+app.use('/api/v1/gateways', require('./routes/gateways'));
 app.use('/api/v1/banners', require('./routes/banners'));
 app.use('/api/v1', require('./routes/public'));
 

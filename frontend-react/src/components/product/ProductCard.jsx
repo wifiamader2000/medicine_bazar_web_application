@@ -33,7 +33,7 @@ const ProductCard = ({ product }) => {
         </div>
       )}
 
-      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] rounded-[18px] mb-2 sm:mb-4 overflow-hidden">
+      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] rounded-[18px] mb-3 sm:mb-4 overflow-hidden">
         <ProductImage
           product={product}
           alt={displayName}
@@ -43,20 +43,20 @@ const ProductCard = ({ product }) => {
 
       <div className="flex-1 flex flex-col">
         <Link to={detailPath} className="hover:text-[var(--color-primary)] transition-colors">
-          <h3 className="font-bold text-slate-800 leading-snug mb-1 line-clamp-2 text-xs sm:text-sm md:text-base">
-            {displayName} {strength && <span className="text-slate-500 font-normal text-[10px] sm:text-xs">({strength})</span>}
+          <h3 className="font-extrabold text-slate-800 leading-snug mb-1 line-clamp-2 text-sm sm:text-base">
+            {displayName} {strength && <span className="text-slate-500 font-normal text-xs">({strength})</span>}
           </h3>
         </Link>
-        <p className="text-[10px] sm:text-xs text-slate-400 mb-1 truncate font-medium">{genericName}</p>
-        <p className="text-[9px] sm:text-[11px] text-slate-400 mb-2 sm:mb-3 truncate font-semibold uppercase tracking-wider">{manufacturer?.name || manufacturer}</p>
+        <p className="text-xs text-slate-400 mb-1 truncate font-semibold">{genericName}</p>
+        <p className="text-[10px] sm:text-[11px] text-slate-400 mb-3 truncate font-bold uppercase tracking-wider">{manufacturer?.name || manufacturer}</p>
 
         <div className="mt-auto pt-2 border-t border-slate-100/60">
-          <div className="flex items-end gap-1.5 mb-2 sm:mb-3">
-            <span className="text-sm sm:text-base md:text-lg font-extrabold text-[var(--color-primary)]">{formatPrice(price)}</span>
+          <div className="flex items-end gap-2 mb-3">
+            <span className="text-sm sm:text-base md:text-lg font-black text-emerald-700">{formatPrice(price)}</span>
             {discount > 0 && (
               <>
-                <span className="text-[10px] sm:text-xs text-slate-400 line-through mb-0.5">{formatPrice(mrp)}</span>
-                <Badge variant="offer" className="ml-auto text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5">-{discount}%</Badge>
+                <span className="text-xs text-slate-400 line-through mb-0.5 font-medium">{formatPrice(mrp)}</span>
+                <Badge variant="offer" className="ml-auto text-[9px] sm:text-[11px] px-2 py-0.5 font-bold">-{discount}%</Badge>
               </>
             )}
           </div>
@@ -65,7 +65,7 @@ const ProductCard = ({ product }) => {
             fullWidth
             variant="primary"
             size="sm"
-            className="mt-auto font-bold text-xs sm:text-sm py-1.5 sm:py-2 min-h-[34px] sm:min-h-[38px] rounded-[10px] sm:rounded-[12px]"
+            className="mt-auto font-bold text-xs sm:text-sm py-2 min-h-[38px] rounded-[12px]"
             onClick={() => addProductToCart(product)}
           >
             {t('common.addToCart')}

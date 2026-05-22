@@ -223,7 +223,7 @@ const Home = () => {
       ? { background: currentBanner.backgroundGradient }
       : currentBanner.imageUrl
         ? { backgroundImage: `url(${currentBanner.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-        : { background: 'linear-gradient(135deg, #10B981 0%, #00b589 50%, #06b6d4 100%)' };
+        : { background: 'linear-gradient(135deg, #075E54 0%, #05463f 50%, #022a25 100%)' };
 
     return (
       <section 
@@ -570,7 +570,7 @@ const Home = () => {
             {language === 'en' ? 'No medicines registered inside catalog.' : 'ওষুধ ডিরেক্টরি ক্যাটালগে কোনো ওষুধ পাওয়া যায়নি।'}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id || product._id} product={product} />
             ))}

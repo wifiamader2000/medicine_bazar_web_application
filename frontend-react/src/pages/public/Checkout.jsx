@@ -883,7 +883,7 @@ const Checkout = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-8 py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-teal)] hover:brightness-105 active:scale-[0.97] text-white rounded-2xl font-extrabold shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 pressable text-sm hover-lift"
+                className="px-6 py-2.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-teal)] text-white rounded-xl font-bold shadow shadow-emerald-500/10 transition-all flex items-center gap-2 hover-lift text-sm"
               >
                 {language === 'bn' ? 'পরবর্তী' : 'Continue'}
                 <ArrowRight size={16} />
@@ -892,13 +892,13 @@ const Checkout = () => {
               <Button
                 onClick={placeOrder}
                 disabled={loading}
-                className="px-10 py-4 font-black text-lg bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white rounded-2xl shadow-xl shadow-emerald-500/30 flex items-center gap-2.5 pressable hover-lift border-0 transition-all active:scale-[0.98] w-full sm:w-auto"
+                className="px-6 py-3 font-bold text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl shadow-md shadow-emerald-500/10 flex items-center gap-2 hover-lift transition-all w-full sm:w-auto"
               >
                 {loading ? (
                   <span>Processing Order...</span>
                 ) : (
                   <>
-                    <ShieldCheck size={20} />
+                    <ShieldCheck size={18} />
                     {language === 'bn' ? 'অর্ডার সম্পন্ন করুন' : 'Place Secure Order'}
                   </>
                 )}

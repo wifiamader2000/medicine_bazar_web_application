@@ -11,20 +11,20 @@ const Button = ({
   disabled = false,
   ...props 
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
+  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-[16px] min-h-[44px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white hover:from-[var(--color-primary-dark)] hover:to-[var(--color-secondary)] shadow-sm hover:shadow-md focus:ring-[var(--color-primary)]',
-    secondary: 'bg-gradient-to-r from-[var(--color-teal)] to-[var(--color-trust)] text-white hover:from-teal-600 hover:to-blue-700 shadow-sm hover:shadow-md focus:ring-[var(--color-teal)]',
-    outline: 'border-2 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 focus:ring-[var(--color-primary)]',
+    primary: 'cta-gradient text-white hover:brightness-105 active:brightness-95 shadow-md shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/25 focus:ring-[var(--color-primary)]',
+    secondary: 'bg-white/80 backdrop-blur-md border-2 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 focus:ring-[var(--color-primary)]',
+    outline: 'border-2 border-[var(--color-teal)] text-[var(--color-teal)] hover:bg-[var(--color-teal)]/5 focus:ring-[var(--color-teal)]',
     ghost: 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-slate-500',
-    danger: 'bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-sm hover:shadow-md focus:ring-red-500'
+    danger: 'bg-[var(--color-alert)] text-white hover:bg-red-700 shadow-sm hover:shadow-md focus:ring-red-500'
   };
   
   const sizes = {
-    sm: 'px-3.5 py-1.5 text-sm',
-    md: 'px-5 py-2.5 text-base',
-    lg: 'px-7 py-3.5 text-lg'
+    sm: 'px-4 py-1.5 text-sm min-h-[38px] rounded-[12px]',
+    md: 'px-6 py-2.5 text-base',
+    lg: 'px-8 py-3.5 text-lg rounded-[18px]'
   };
 
   const classes = `

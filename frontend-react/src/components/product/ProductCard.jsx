@@ -26,46 +26,46 @@ const ProductCard = ({ product }) => {
   const displayName = language === 'bn' && nameBn ? nameBn : name;
 
   return (
-    <Card hover className="flex flex-col h-full relative group shadow-sm bg-white rounded-xl">
+    <Card hover className="flex flex-col h-full relative group overflow-hidden p-4">
       {requiresPrescription && (
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="danger" className="text-[10px] px-2 py-0.5 font-bold">Rx</Badge>
+        <div className="absolute top-3 right-3 z-10">
+          <Badge variant="danger" className="text-[10px] px-2.5 py-0.5 font-bold shadow-sm">Rx Only</Badge>
         </div>
       )}
 
-      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] rounded-xl mb-3 overflow-hidden">
+      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] rounded-[18px] mb-4 overflow-hidden">
         <ProductImage
           product={product}
           alt={displayName}
-          className="absolute inset-0 w-full h-full"
+          className="absolute inset-0 w-full h-full transform group-hover:scale-105 transition-transform duration-300"
         />
       </Link>
 
       <div className="flex-1 flex flex-col">
-        <Link to={detailPath} className="hover:text-[var(--color-primary)]">
-          <h3 className="font-semibold text-gray-900 leading-tight mb-1 line-clamp-2">
-            {displayName} <span className="text-gray-500 font-normal">{strength}</span>
+        <Link to={detailPath} className="hover:text-[var(--color-primary)] transition-colors">
+          <h3 className="font-bold text-slate-800 leading-snug mb-1 line-clamp-2 text-sm sm:text-base">
+            {displayName} {strength && <span className="text-slate-500 font-normal text-xs sm:text-sm">({strength})</span>}
           </h3>
         </Link>
-        <p className="text-xs text-gray-500 mb-1 truncate">{genericName}</p>
-        <p className="text-xs text-gray-500 mb-2 truncate">{manufacturer?.name || manufacturer}</p>
+        <p className="text-xs text-slate-400 mb-1 truncate font-medium">{genericName}</p>
+        <p className="text-[11px] text-slate-400 mb-3 truncate font-semibold uppercase tracking-wider">{manufacturer?.name || manufacturer}</p>
 
-        <div className="mt-auto">
+        <div className="mt-auto pt-2 border-t border-slate-100/60">
           <div className="flex items-end gap-2 mb-3">
-            <span className="text-lg font-bold text-[var(--color-primary)]">{formatPrice(price)}</span>
+            <span className="text-lg font-extrabold text-[var(--color-primary)]">{formatPrice(price)}</span>
             {discount > 0 && (
               <>
-                <span className="text-sm text-gray-400 line-through">{formatPrice(mrp)}</span>
-                <Badge variant="offer" className="ml-auto">-{discount}%</Badge>
+                <span className="text-xs text-slate-400 line-through mb-0.5">{formatPrice(mrp)}</span>
+                <Badge variant="offer" className="ml-auto text-[10px] px-2 py-0.5">-{discount}%</Badge>
               </>
             )}
           </div>
 
           <Button
             fullWidth
-            variant="outline"
+            variant="primary"
             size="sm"
-            className="mt-auto group-hover:bg-[var(--color-primary)] group-hover:text-white"
+            className="mt-auto font-bold"
             onClick={() => addProductToCart(product)}
           >
             {t('common.addToCart')}

@@ -14,7 +14,7 @@ const Input = forwardRef(({
           {label}
         </label>
       )}
-      <div className="relative rounded-xl">
+      <div className="relative rounded-[16px]">
         {Icon && (
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Icon className="h-5 w-5 text-slate-400" />
@@ -23,7 +23,7 @@ const Input = forwardRef(({
         <input
           ref={ref}
           className={`
-            w-full rounded-xl border px-4 py-2.5 text-slate-900 bg-white placeholder-slate-400
+            w-full rounded-[16px] border px-4 py-2.5 text-slate-900 bg-white placeholder-slate-400
             transition-all duration-200 shadow-sm
             focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]/20 focus:border-[var(--color-teal)]
             ${Icon ? 'pl-11' : ''}

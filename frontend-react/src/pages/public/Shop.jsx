@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, SlidersHorizontal, Search as SearchIcon, Upload, Phone, AlertCircle, RotateCcw } from 'lucide-react';
+import { Filter, SlidersHorizontal, Search as SearchIcon, Upload, Phone, AlertCircle, RotateCcw, X } from 'lucide-react';
 import api from '../../services/api';
 import ProductGrid from '../../components/product/ProductGrid';
 import Button from '../../components/common/Button';
@@ -27,7 +27,9 @@ const Shop = () => {
     search: searchParams.get('search') || '',
     prescriptionRequired: searchParams.get('prescriptionRequired') || '',
     inStock: searchParams.get('inStock') === 'true',
-    sort: searchParams.get('sort') || ''
+    sort: searchParams.get('sort') || '',
+    minPrice: searchParams.get('minPrice') || '',
+    maxPrice: searchParams.get('maxPrice') || ''
   });
 
   useEffect(() => {
@@ -89,6 +91,8 @@ const Shop = () => {
     if (filters.prescriptionRequired) urlParams.set('prescriptionRequired', filters.prescriptionRequired);
     if (filters.inStock) urlParams.set('inStock', 'true');
     if (filters.sort) urlParams.set('sort', filters.sort);
+    if (filters.minPrice) urlParams.set('minPrice', filters.minPrice);
+    if (filters.maxPrice) urlParams.set('maxPrice', filters.maxPrice);
     setSearchParams(urlParams, { replace: true });
     
   }, [filters, pagination.page, setSearchParams]);
@@ -104,8 +108,7 @@ const Shop = () => {
   };
 
   const handleUploadPrescription = () => {
-    // Navigate to checkout/upload trigger or trigger global upload
-    window.location.href = '/checkout';
+    window.location.href = '/prescription-upload';
   };
 
   return (
@@ -185,13 +188,13 @@ const Shop = () => {
         </div>
 
         {/* Main Grid Wrapper */}
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-8 relative">
           
           {/* Mobile Filter & Sort Bar */}
-          <div className="md:hidden flex gap-3 w-full shrink-0">
+          <div className="md:hidden flex gap-3 w-full shrink-0 z-10">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex-1 bg-white/80 backdrop-blur-md py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              onClick={() => setShowFilters(true)}
+              className="flex-1 bg-white/80 backdrop-blur-md py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-sm pressable"
             >
               <Filter size={18} className="text-[var(--color-primary)]" />
               {language === 'en' ? 'Refine Filters' : 'ফিল্টারসমূহ'}
@@ -210,25 +213,43 @@ const Shop = () => {
             </div>
           </div>
 
-          {/* Sidebar Filters Widget */}
-          <aside className={`w-full md:w-72 shrink-0 ${showFilters ? 'block' : 'hidden md:block'}`}>
-            <div className="bg-white/90 backdrop-blur-lg p-6 rounded-[24px] border border-[var(--color-primary)]/10 shadow-lg shadow-emerald-950/5 sticky top-24 space-y-6">
+          {/* Mobile Drawer Overlay Backdrop */}
+          {showFilters && (
+            <div 
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden animate-fade-in"
+              onClick={() => setShowFilters(false)}
+            />
+          )}
+
+          {/* Sidebar Filters Widget / Slide-out Mobile Drawer */}
+          <aside className={`fixed inset-y-0 left-0 w-80 bg-white z-50 p-6 shadow-2xl overflow-y-auto border-r border-slate-100 transition-transform duration-300 ease-out md:static md:w-72 md:p-0 md:bg-transparent md:shadow-none md:border-0 md:h-auto md:overflow-visible ${
+            showFilters ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}>
+            <div className="bg-white/95 backdrop-blur-lg p-6 rounded-[24px] border border-[var(--color-primary)]/10 shadow-lg md:shadow-emerald-950/5 sticky top-24 space-y-6">
               
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <span className="font-extrabold text-slate-800 text-base flex items-center gap-2">
                   <SlidersHorizontal size={18} className="text-[var(--color-primary)]" />
                   {language === 'en' ? 'Filter Directory' : 'পণ্য ফিল্টার করুন'}
                 </span>
-                <button
-                  onClick={() => {
-                    setFilters({ category: '', search: '', prescriptionRequired: '', inStock: false, sort: '' });
-                    setPagination({ page: 1, totalPages: 1 });
-                  }}
-                  className="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1 font-semibold"
-                >
-                  <RotateCcw size={12} />
-                  {language === 'en' ? 'Reset All' : 'মুছে ফেলুন'}
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => {
+                      setFilters({ category: '', search: '', prescriptionRequired: '', inStock: false, sort: '', minPrice: '', maxPrice: '' });
+                      setPagination({ page: 1, totalPages: 1 });
+                    }}
+                    className="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                  >
+                    <RotateCcw size={12} />
+                    {language === 'en' ? 'Reset All' : 'মুছে ফেলুন'}
+                  </button>
+                  <button 
+                    onClick={() => setShowFilters(false)}
+                    className="md:hidden p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
 
               {/* Keyword Search Input */}
@@ -246,8 +267,30 @@ const Shop = () => {
                 </div>
               </div>
 
+              {/* Price Filter range */}
+              <div className="space-y-2 pt-4 border-t border-slate-100">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{language === 'en' ? 'Price Range (৳)' : 'মূল্যসীমা (৳)'}</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder={language === 'en' ? 'Min' : 'সর্বনিম্ন'}
+                    value={filters.minPrice}
+                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+                  />
+                  <span className="text-slate-400 text-xs">-</span>
+                  <input 
+                    type="number" 
+                    placeholder={language === 'en' ? 'Max' : 'সর্বোচ্চ'}
+                    value={filters.maxPrice}
+                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+
               {/* Prescription Type */}
-              <div className="space-y-3">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{language === 'en' ? 'Prescription Rule' : 'প্রেসক্রিপশন বিধি'}</label>
                 <div className="space-y-2.5">
                   {[
@@ -279,7 +322,7 @@ const Shop = () => {
                     type="checkbox" 
                     checked={filters.inStock}
                     onChange={(e) => handleFilterChange('inStock', e.target.checked)}
-                    className="w-4 h-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20 border-slate-300 bg-slate-50" 
+                    className="w-4 h-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20 border-slate-300 bg-slate-50 animate-soft-scale" 
                   />
                   <span className="text-slate-600 text-sm font-medium group-hover:text-slate-800 transition-colors">
                     {language === 'en' ? 'In Stock Only' : 'শুধু স্টকে আছে'}

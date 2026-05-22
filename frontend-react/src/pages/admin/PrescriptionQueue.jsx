@@ -199,7 +199,7 @@ const PrescriptionQueue = () => {
 
         {/* Status Filters */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-          {['pending', 'completed', 'rejected'].map((status) => (
+          {['pending', 'completed', 'rejected', 'clarification'].map((status) => (
             <button
               key={status}
               onClick={() => {
@@ -214,6 +214,7 @@ const PrescriptionQueue = () => {
             >
               {status === 'pending' ? (language === 'en' ? 'Pending Audit' : 'অপেক্ষমান') : 
                status === 'completed' ? (language === 'en' ? 'Verified' : 'যাচাইকৃত') : 
+               status === 'clarification' ? (language === 'en' ? 'Clarify Needed' : 'স্পষ্টীকরণ') : 
                (language === 'en' ? 'Rejected' : 'প্রত্যাখ্যাত')}
             </button>
           ))}
@@ -250,7 +251,7 @@ const PrescriptionQueue = () => {
                   <h4 className="text-sm font-bold text-gray-900 truncate max-w-[150px]">
                     {rx.patientName || rx.customerName}
                   </h4>
-                  <Badge variant={rx.status === 'pending' ? 'warning' : rx.status === 'completed' ? 'success' : 'danger'} className="text-[10px] uppercase font-bold">
+                  <Badge variant={rx.status === 'pending' ? 'warning' : rx.status === 'completed' ? 'success' : rx.status === 'clarification' ? 'info' : 'danger'} className="text-[10px] uppercase font-bold">
                     {rx.status}
                   </Badge>
                 </div>
@@ -483,19 +484,27 @@ const PrescriptionQueue = () => {
                 </div>
 
                 {/* Final controls */}
-                <div className="flex gap-3 pt-6 border-t border-gray-100">
+                <div className="flex flex-wrap gap-2 pt-6 border-t border-gray-100">
                   <button
                     onClick={() => handleReview('rejected')}
                     disabled={loading}
-                    className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-red-200"
+                    className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors border border-red-200 cursor-pointer"
                   >
-                    <XCircle size={15} />
-                    {language === 'en' ? 'Reject Prescription' : 'প্রত্যাখ্যান করুন'}
+                    <XCircle size={14} />
+                    {language === 'en' ? 'Reject' : 'প্রত্যাখ্যান'}
+                  </button>
+                  <button
+                    onClick={() => handleReview('clarification')}
+                    disabled={loading}
+                    className="flex-1 bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors border border-amber-200 cursor-pointer"
+                  >
+                    <FileQuestion size={14} />
+                    {language === 'en' ? 'Clarify' : 'স্পষ্টীকরণ'}
                   </button>
                   <button
                     onClick={() => handleReview('completed')}
                     disabled={loading || draftCart.length === 0}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     <CheckCircle2 size={15} />
                     {language === 'en' ? 'Verify & Approve' : 'যাচাই ও অনুমোদন'}

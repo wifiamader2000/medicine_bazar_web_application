@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Check, Info, Shield, ShoppingCart, Truck } from 'lucide-react';
 import api from '../../services/api';
 import Button from '../../components/common/Button';
@@ -106,7 +106,7 @@ const ProductDetail = () => {
   const savingsPercent = hasSavings && currentPrice > 0 ? Math.round((savingsAmount / currentPrice) * 100) : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24 md:pb-8">
       {/* Product Details Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
@@ -153,15 +153,53 @@ const ProductDetail = () => {
                 <Check size={18} /> {inStock ? t('common.inStock') : t('common.outOfStock')}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="flex-1 gap-2 shadow-sm rounded-xl py-3" disabled={!inStock} onClick={() => addProductToCart(product)}>
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <Button size="lg" className="flex-1 gap-2 shadow-sm rounded-xl py-3 pressable hover-lift" disabled={!inStock} onClick={() => addProductToCart(product)}>
                   <ShoppingCart size={20} /> {t('common.addToCart')}
                 </Button>
                 {requiresPrescription && (
-                  <Button size="lg" variant="outline" className="flex-1 rounded-xl py-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50" onClick={() => addProductToCart(product)}>
-                    {t('common.uploadPrescription') || 'Upload Prescription'}
-                  </Button>
+                  <Link to="/prescription-upload" className="flex-1">
+                    <Button size="lg" variant="outline" className="w-full rounded-xl py-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50 pressable hover-lift">
+                      {t('common.uploadPrescription') || 'Upload Prescription'}
+                    </Button>
+                  </Link>
                 )}
+              </div>
+
+              {/* Clinical Rx Warning Alert */}
+              {requiresPrescription && (
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3.5 mb-6 text-sm text-red-800 animate-pulse">
+                  <div className="flex gap-2.5 items-start">
+                    <span className="font-extrabold px-1.5 py-0.5 bg-red-600 text-white rounded text-xs select-none">Rx</span>
+                    <div>
+                      <p className="font-bold">{language === 'bn' ? 'প্রেসক্রিপশন আবশ্যক' : 'Prescription Required'}</p>
+                      <p className="text-xs text-red-700/90 mt-0.5">
+                        {language === 'bn'
+                          ? 'এই ওষুধটি কেনার জন্য অবশ্যই একটি রেজিস্টার্ড ডাক্তারের প্রেসক্রিপশন আপলোড করতে হবে।'
+                          : 'You must provide a valid doctor\'s prescription. Our certified pharmacist will verify it before dispatch.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Estimate & Supported Payments */}
+              <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100 space-y-3 mb-6">
+                <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
+                  <span>{language === 'bn' ? 'ডেলিভারি সময়:' : 'Delivery Estimate:'}</span>
+                  <span className="font-bold text-slate-700">
+                    {language === 'bn' ? 'ঢাকা সিটিতে ২৪ ঘণ্টা, বাইরে ৭২ ঘণ্টা' : 'Dhaka 24h, Outside 72h'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-slate-500 font-medium pt-2.5 border-t border-slate-200/60">
+                  <span>{language === 'bn' ? 'পেমেন্ট মাধ্যম:' : 'Accepted Payments:'}</span>
+                  <div className="flex gap-1.5">
+                    <span className="bg-slate-200/80 text-[10px] text-slate-600 px-1.5 py-0.5 rounded font-bold">COD</span>
+                    <span className="bg-pink-100 text-[10px] text-pink-700 px-1.5 py-0.5 rounded font-bold">bKash</span>
+                    <span className="bg-orange-100 text-[10px] text-orange-700 px-1.5 py-0.5 rounded font-bold">Nagad</span>
+                    <span className="bg-blue-100 text-[10px] text-blue-700 px-1.5 py-0.5 rounded font-bold">Upay</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -445,6 +483,31 @@ const ProductDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 md:hidden flex items-center justify-between gap-4 animate-fade-up">
+        <div className="flex flex-col">
+          <span className="text-xs text-slate-400 font-bold uppercase">{displayName.length > 18 ? displayName.substring(0, 18) + '...' : displayName}</span>
+          <span className="text-xl font-extrabold text-slate-800">{formatPrice(currentPrice)}</span>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {requiresPrescription && (
+            <Link to="/prescription-upload">
+              <Button size="sm" variant="outline" className="text-xs border-emerald-500 text-emerald-600 font-bold py-2.5 px-3 rounded-lg pressable">
+                {language === 'bn' ? 'প্রেসক্রিপশন দিন' : 'Upload Rx'}
+              </Button>
+            </Link>
+          )}
+          <Button
+            size="sm"
+            className="text-xs py-2.5 px-4 rounded-lg font-bold pressable flex items-center gap-1.5 shadow-sm"
+            disabled={!inStock}
+            onClick={() => addProductToCart(product)}
+          >
+            <ShoppingCart size={14} /> {t('common.addToCart')}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

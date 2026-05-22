@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon } from 'lucide-react';
+import { Search as SearchIcon, AlertCircle, Upload, Phone } from 'lucide-react';
 import api from '../../services/api';
 import Button from '../../components/common/Button';
 import ErrorState from '../../components/common/ErrorState';
@@ -161,6 +161,41 @@ const Search = () => {
         <ErrorState message={error} />
       ) : loading ? (
         <Loading />
+      ) : results.length === 0 && urlQuery ? (
+        <div className="bg-white/90 backdrop-blur-md rounded-[28px] border border-[var(--color-primary)]/10 shadow-lg shadow-emerald-950/5 p-12 text-center max-w-2xl mx-auto my-6 space-y-6 animate-fade-up">
+          <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500 border border-amber-100/50">
+            <AlertCircle size={36} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-slate-800">
+              {language === 'en' ? 'Medicine Not Found' : 'দুঃখিত, ওষুধটি খুঁজে পাওয়া যায়নি'}
+            </h3>
+            <p className="text-sm text-[var(--color-muted)] max-w-md mx-auto">
+              {language === 'en' 
+                ? "Sorry, we couldn't find the medicine you were looking for. Please upload your prescription or let us know on WhatsApp."
+                : "দুঃখিত, ওষুধটি খুঁজে পাওয়া যায়নি। আপনার প্রেসক্রিপশনটি আপলোড করুন অথবা WhatsApp-এ আমাদের জানান।"}
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
+            <Link 
+              to="/prescription-upload" 
+              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white text-sm font-bold px-6 py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 pressable"
+            >
+              <Upload size={18} />
+              {language === 'en' ? 'Upload Prescription' : 'প্রেসক্রিপশন আপলোড করুন'}
+            </Link>
+            <a 
+              href={`https://wa.me/8801602444532?text=${encodeURIComponent(`Hello Medicine Bazar, I am looking for the medicine "${urlQuery}" but could not find it.`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-bold px-6 py-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 pressable"
+            >
+              <Phone size={18} className="text-emerald-500" />
+              {language === 'en' ? 'WhatsApp Support' : 'WhatsApp-এ জানান'}
+            </a>
+          </div>
+        </div>
       ) : (
         <ProductGrid products={results} className="lg:grid-cols-5" />
       )}

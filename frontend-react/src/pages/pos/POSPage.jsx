@@ -8,7 +8,7 @@ import POSPaymentPanel from '../../components/pos/POSPaymentPanel';
 import POSReceipt from '../../components/pos/POSReceipt';
 import POSSearch from '../../components/pos/POSSearch';
 import Button from '../../components/common/Button';
-import { productPrice, unwrapData } from '../../utils/apiData';
+import { formatPrice, productPrice, unwrapData } from '../../utils/apiData';
 import { useLanguage } from '../../context/LanguageContext';
 
 const POSPage = () => {
@@ -308,6 +308,27 @@ const POSPage = () => {
             <p className="text-xs text-gray-500 font-medium">{t('pos.terminal')} 1 - {t('pos.cashier')}: {user.name}</p>
           </div>
         </div>
+
+        {/* Real-time Session Metrics */}
+        {session && (
+          <div className="hidden lg:flex items-center gap-6 px-4 py-1.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-semibold">
+            <div className="flex flex-col text-slate-500">
+              <span>{language === 'bn' ? 'প্রারম্ভিক ক্যাশ:' : 'Starting Cash:'}</span>
+              <span className="font-bold text-slate-700">{formatPrice(session.openingCash || 0)}</span>
+            </div>
+            <div className="h-6 w-px bg-slate-200"></div>
+            <div className="flex flex-col text-slate-500">
+              <span>{language === 'bn' ? 'আজকের বিক্রয়:' : 'POS Sales:'}</span>
+              <span className="font-bold text-emerald-600">+{formatPrice(session.totalSales || 0)}</span>
+            </div>
+            <div className="h-6 w-px bg-slate-200"></div>
+            <div className="flex flex-col text-slate-500">
+              <span>{language === 'bn' ? 'ড্রয়ার ব্যালেন্স:' : 'Expected Cash:'}</span>
+              <span className="font-bold text-primary-dark">{formatPrice((session.openingCash || 0) + (session.totalSales || 0))}</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium px-3 py-1 bg-primary/10 text-primary-dark rounded-full">
             {new Date().toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}

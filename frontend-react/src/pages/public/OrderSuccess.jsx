@@ -19,12 +19,13 @@ const OrderSuccess = () => {
   const totalAmount = order.total || 0;
   const items = order.items || [];
 
+  const token = localStorage.getItem('token');
+  const isGuest = !token;
+
   // Formulate WhatsApp message with dynamic Order ID
   const whatsappNumber = '8801602444532';
   const whatsappText = encodeURIComponent(
-    language === 'en'
-      ? `Hello Medicine Bazar, I have completed my order. Order ID: ${orderNumber}. Please review my manual payment/prescription.`
-      : `হ্যালো মেডিসিন বাজার, আমি আমার অর্ডারটি সম্পন্ন করেছি। অর্ডার আইডি: ${orderNumber}। অনুগ্রহ করে আমার পেমেন্ট ও প্রেসক্রিপশন রিভিউ করুন।`
+    `Hi Medicine Bazar, my order number is #${orderNumber || orderId}. Please verify my manual payment.`
   );
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappText}`;
 
@@ -344,6 +345,22 @@ const OrderSuccess = () => {
               {language === 'en' ? 'Continue Shopping' : 'আরো কেনাকাটা করুন'}
               <ArrowRight size={14} />
             </button>
+
+            {isGuest && (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center mt-4">
+                <p className="text-xs text-emerald-800 font-semibold mb-2">
+                  {language === 'en'
+                    ? 'Create account to track order'
+                    : 'অর্ডার ট্র্যাক করতে অ্যাকাউন্ট তৈরি করুন'}
+                </p>
+                <button
+                  onClick={() => navigate('/login?tab=signup')}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all shadow cursor-pointer"
+                >
+                  {language === 'en' ? 'Create Account' : 'অ্যাকাউন্ট তৈরি করুন'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

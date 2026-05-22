@@ -10,6 +10,11 @@ const POSSearch = ({ onAddProduct }) => {
   const inputRef = useRef(null);
 
   useEffect(() => {
+    // Auto-focus on mount
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+
     const handleKeyDown = (event) => {
       if (event.key === 'F2') {
         event.preventDefault();

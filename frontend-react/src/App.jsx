@@ -16,6 +16,7 @@ import Category from './pages/public/Category';
 import Brand from './pages/public/Brand';
 import Checkout from './pages/public/Checkout';
 import OrderSuccess from './pages/public/OrderSuccess';
+import PrescriptionUpload from './pages/public/PrescriptionUpload';
 import NotFound from './pages/public/NotFound';
 
 // Auth Pages
@@ -51,6 +52,7 @@ const App = () => {
           <Route path="/brand/:slug" element={<Brand />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/prescription-upload" element={<PrescriptionUpload />} />
           
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />

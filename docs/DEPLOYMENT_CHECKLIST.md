@@ -14,8 +14,9 @@ Before going live with the soft launch, ensure the following production requirem
 - [ ] Rate limiting enabled (configured in `backend/config/index.js`).
 
 ## 3. Data & Storage
-- [ ] Transition from JSON file-store to a robust database (PostgreSQL/MongoDB) before mass marketing. JSON is only suitable for the initial soft-launch/beta testing phase.
-- [ ] Daily automated backups configured for `database/` and `uploads/` directories.
+- [ ] MongoDB is verified safe for Soft Launch (JSON fallback remains for local dev).
+- [ ] PostgreSQL Migration Roadmap is prepared (`docs/POSTGRES_MIGRATION_ROADMAP.md`) but deferred until 1-3 months of real data is gathered.
+- [ ] Daily automated backups configured for MongoDB (`database/`) and `uploads/` directories.
 
 ## 4. Monitoring & Analytics
 - [ ] Uptime monitoring enabled (e.g., UptimeRobot).

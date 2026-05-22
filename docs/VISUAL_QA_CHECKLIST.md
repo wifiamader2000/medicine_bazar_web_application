@@ -51,12 +51,30 @@ Since the full dataset is currently pending, use this checklist to perform visua
 - [ ] File selection shows preview.
 - [ ] Submission creates a prescription order in the admin panel.
 
-## 9. Admin Dashboard
+## 6. Accounting & Cash Closing
+- [ ] **Accounting Dashboard**: Verify that "Today's Net Profit", "Income", and "Expense" cards match the sum of completed POS sales + delivered orders + due collections - expenses.
+- [ ] **Missing Cost Price Warning**: Ensure a warning shows if any sold items lack a purchase price.
+- [ ] **Day Closing**: Successfully submit a Day Closing report. Verify it calculates cash discrepancies correctly.
+
+## 7. Customer Due & CRM
+- [ ] **Due Sale**: Create a POS sale with tendered amount less than total. Verify it registers as a Due Sale.
+- [ ] **Customer Ledger**: Check the customer's CRM profile to see the due balance increase.
+- [ ] **Due Collection**: Make a manual due payment from the CRM dashboard and verify the balance decreases.
+
+## 8. Export Center & Notifications
+- [ ] **CSV Exports**: Navigate to Export Center and download Daily Sales and Stock Reports. Ensure valid Blob download (no direct anchor links for authenticated routes).
+- [ ] **Notification Templates**: Verify templates load correctly. Ensure system returns `provider_not_configured` when SMS/Email credentials are missing in `.env`.
+
+## 9. Payment Gateways
+- [ ] **Checkout UI**: Automated gateways (bKash/Nagad Auto, SSLCommerz) should show as "Coming Soon" if disabled in `.env`.
+- [ ] **Gateway Status**: Check the Admin Payment Gateways page to confirm statuses match the `.env` settings securely (no keys exposed).
+
+## 10. Admin & Access Control
 - [ ] Dashboard stats are accurate (Total Orders, Total Sales, Total Users).
 - [ ] Recent Orders list populates correctly.
 - [ ] Navigation menu items work (Orders, Products, Categories, Users, Settings).
 
-## 10. Reports
+## 11. Reports
 - [ ] Sales report displays correctly.
 - [ ] Inventory report shows low stock items.
 - [ ] Date filtering functionality works.

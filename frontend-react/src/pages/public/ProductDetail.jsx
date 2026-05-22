@@ -73,213 +73,353 @@ const ProductDetail = () => {
 
   const tabs = [
     { id: 'overview', label: t('product.overview') },
-    { id: 'uses', label: t('product.uses') },
-    { id: 'side_effects', label: t('product.sideEffects') },
-    { id: 'warnings', label: t('product.warnings') },
+    { id: 'uses', label: t('product.uses') || 'Uses' },
+    { id: 'dosage', label: t('product.dosage') || 'Dosage' },
+    { id: 'side_effects', label: t('product.sideEffects') || 'Side Effects' },
+    { id: 'warnings', label: t('product.warnings') || 'Warnings' },
+    { id: 'storage', label: language === 'en' ? 'Storage' : 'সংরক্ষণ' },
+    { id: 'reviews', label: language === 'en' ? 'Reviews' : 'রিভিউ' }
   ];
+
   const requiresPrescription = productRequiresPrescription(product);
   const inStock = (product.stockQuantity || 0) > 0;
-
   const displayName = language === 'bn' && product.nameBn ? product.nameBn : product.name;
 
+  // Sort alternatives: in-stock first, lowest price second
+  const sortedAlternatives = [...alternatives].sort((a, b) => {
+    const aStock = (a.stockQuantity || 0) > 0 ? 1 : 0;
+    const bStock = (b.stockQuantity || 0) > 0 ? 1 : 0;
+    if (aStock !== bStock) return bStock - aStock;
+    
+    const aPrice = productPrice(a);
+    const bPrice = productPrice(b);
+    return aPrice - bPrice;
+  });
+
+  // Calculate savings for the meter based on the cheapest in-stock alternative
+  const currentPrice = productPrice(product);
+  const cheapestAlt = sortedAlternatives.find(alt => (alt.stockQuantity || 0) > 0);
+  const cheapestAltPrice = cheapestAlt ? productPrice(cheapestAlt) : 0;
+  
+  const hasSavings = cheapestAlt && currentPrice > cheapestAltPrice;
+  const savingsAmount = hasSavings ? currentPrice - cheapestAltPrice : 0;
+  const savingsPercent = hasSavings && currentPrice > 0 ? Math.round((savingsAmount / currentPrice) * 100) : 0;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
-        <div className="relative bg-gray-50 rounded-xl p-8 flex items-center justify-center">
-          {requiresPrescription && (
-            <div className="absolute top-4 right-4 z-10">
-              <Badge variant="alert">{t('common.rxRequired')}</Badge>
-            </div>
-          )}
-          <ProductImage product={product} className="w-full max-w-sm aspect-square mix-blend-multiply" />
-        </div>
-
-        <div className="flex flex-col">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {displayName} <span className="text-gray-500 font-normal">{product.strength}</span>
-            </h1>
-            {language === 'en' && product.nameBn && <h2 className="text-xl text-gray-700 mb-2">{product.nameBn}</h2>}
-            {language === 'bn' && product.nameBn && product.name !== displayName && <h2 className="text-xl text-gray-700 mb-2">{product.name}</h2>}
-
-            <p className="text-[var(--color-primary)] font-medium text-lg mb-2">{product.genericName}</p>
-            <p className="text-gray-600 mb-4">{product.manufacturer?.name || product.manufacturer}</p>
-
-            <div className="flex flex-wrap gap-2 mb-6">
-              {product.dosageForm && <Badge variant="gray">{product.dosageForm}</Badge>}
-              {product.packSize && <Badge variant="gray">{t('product.packSize')}: {product.packSize}</Badge>}
-            </div>
-
-            <div className="flex items-end gap-4 mb-6">
-              <div className="text-4xl font-bold text-[var(--color-primary)]">
-                {formatPrice(productPrice(product))}
+    <div className="space-y-8">
+      {/* Product Details Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+          <div className="relative bg-slate-50/60 rounded-2xl p-8 flex items-center justify-center border border-slate-100">
+            {requiresPrescription && (
+              <div className="absolute top-4 right-4 z-10">
+                <Badge variant="danger" className="font-bold py-1 px-3">Rx</Badge>
               </div>
-              {product.discount > 0 && (
-                <>
-                  <div className="text-xl text-gray-400 line-through mb-1">{formatPrice(product.mrp)}</div>
-                  <Badge variant="offer" className="mb-2">
-                    {language === 'en' ? `Save ${product.discount}%` : `${product.discount}% ছাড়`}
-                  </Badge>
-                </>
-              )}
-            </div>
+            )}
+            <ProductImage product={product} className="w-full max-w-sm aspect-square" />
+          </div>
 
-            <div className={`flex items-center gap-2 text-sm mb-8 font-medium ${inStock ? 'text-green-600' : 'text-gray-500'}`}>
-              <Check size={18} /> {inStock ? t('common.inStock') : t('common.outOfStock')}
-            </div>
+          <div className="flex flex-col">
+            <div className="mb-6">
+              <h1 className="text-3xl font-extrabold text-slate-800 mb-2">
+                {displayName} <span className="text-slate-400 font-normal text-xl">{product.strength}</span>
+              </h1>
+              {language === 'en' && product.nameBn && <h2 className="text-lg text-slate-500 font-semibold mb-2">{product.nameBn}</h2>}
+              {language === 'bn' && product.nameBn && product.name !== displayName && <h2 className="text-lg text-slate-500 font-semibold mb-2">{product.name}</h2>}
 
-            <div className="flex gap-4">
-              <Button size="lg" className="flex-1 gap-2" disabled={!inStock} onClick={() => addProductToCart(product)}>
-                <ShoppingCart size={20} /> {t('common.addToCart')}
-              </Button>
-              {requiresPrescription && (
-                <Button size="lg" variant="outline" className="flex-1" onClick={() => addProductToCart(product)}>
-                  {t('common.uploadPrescription')}
+              <p className="text-primary font-bold text-lg mb-1">{product.genericName}</p>
+              <p className="text-slate-500 mb-4">{product.manufacturer?.name || product.manufacturer}</p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                {product.dosageForm && <Badge variant="primary" className="bg-primary/10 text-primary font-semibold">{product.dosageForm}</Badge>}
+                {product.packSize && <Badge variant="gray" className="bg-slate-100 text-slate-600 font-semibold">{t('product.packSize') || 'Pack Size'}: {product.packSize}</Badge>}
+              </div>
+
+              <div className="flex items-end gap-4 mb-6">
+                <div className="text-4xl font-extrabold text-slate-800">
+                  {formatPrice(currentPrice)}
+                </div>
+                {product.discount > 0 && (
+                  <>
+                    <div className="text-xl text-slate-400 line-through mb-1">{formatPrice(product.mrp)}</div>
+                    <Badge variant="offer" className="mb-2 bg-amber-500 text-white font-bold px-2.5 py-0.5">
+                      {language === 'en' ? `Save ${product.discount}%` : `${product.discount}% ছাড়`}
+                    </Badge>
+                  </>
+                )}
+              </div>
+
+              <div className={`flex items-center gap-2 text-sm mb-8 font-bold ${inStock ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <Check size={18} /> {inStock ? t('common.inStock') : t('common.outOfStock')}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="flex-1 gap-2 shadow-sm rounded-xl py-3" disabled={!inStock} onClick={() => addProductToCart(product)}>
+                  <ShoppingCart size={20} /> {t('common.addToCart')}
                 </Button>
-              )}
+                {requiresPrescription && (
+                  <Button size="lg" variant="outline" className="flex-1 rounded-xl py-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50" onClick={() => addProductToCart(product)}>
+                    {t('common.uploadPrescription') || 'Upload Prescription'}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="mt-auto pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <Shield className="text-[var(--color-primary)]" size={24} />
-              <span>{t('home.genuine')}</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <Truck className="text-[var(--color-primary)]" size={24} />
-              <span>{t('home.fastDelivery')}</span>
+            <div className="mt-auto pt-6 border-t border-slate-100 grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                <Shield className="text-primary" size={24} />
+                <span>{t('home.genuine')}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                <Truck className="text-primary" size={24} />
+                <span>{t('home.fastDelivery')}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-gray-200">
-        <div className="flex overflow-x-auto border-b border-gray-200 bg-gray-50 px-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`py-4 px-6 font-medium text-sm whitespace-nowrap transition-colors border-b-2 ${
-                activeTab === tab.id
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Clinical Drug Monograph Tabs */}
+        <div className="border-t border-slate-100 bg-slate-50/20">
+          <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/40 px-8 scrollbar-thin">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`py-4 px-6 font-bold text-sm whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200'
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        <div className="p-8 text-gray-700 leading-relaxed">
-          {activeTab === 'overview' && (
-            <div className="space-y-4">
-              <p>{product.description || product.uses || (language === 'en' ? 'No description available for this product.' : 'এই ওষুধের কোনো বিবরণ উপলব্ধ নেই।')}</p>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mt-6 flex gap-3 text-sm">
-                <Info className="text-yellow-600 shrink-0" size={20} />
-                <p className="text-yellow-800">
-                  <strong className="block mb-1">{t('common.disclaimer')}</strong>
-                  {product.disclaimer || t('common.defaultDisclaimer')}
+          <div className="p-8 text-slate-700 leading-relaxed">
+            {/* Disclaimer Bar (Required Bilingual Banner) */}
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-6 flex gap-3 text-sm">
+              <Info className="text-emerald-600 shrink-0" size={20} />
+              <div className="text-emerald-800 font-medium">
+                <p className="font-bold mb-1">{language === 'en' ? 'Important Medical Advisory' : 'গুরুত্বপূর্ণ সতর্কতা'}</p>
+                <p>
+                  {language === 'bn' 
+                    ? 'এই তথ্য শুধুমাত্র সাধারণ জ্ঞানের জন্য। চিকিৎসকের পরামর্শ ছাড়া ওষুধ সেবন করবেন না।' 
+                    : 'This information is for general educational purposes only. Never consume any medication without direct advice from a registered medical physician.'}
                 </p>
               </div>
             </div>
-          )}
 
-          {activeTab === 'uses' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">{language === 'en' ? 'Uses' : 'ব্যবহারসমূহ'}</h3>
-                <p>{product.uses || product.indication || product.indications || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
+            {activeTab === 'overview' && (
+              <div className="space-y-4">
+                <p className="font-medium text-slate-800">
+                  {product.description || product.uses || (language === 'en' ? 'No monograph description available for this product.' : 'এই ওষুধের কোনো বিবরণ উপলব্ধ নেই।')}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span className="text-xs text-slate-400 block font-bold uppercase">{language === 'en' ? 'Generic Name' : 'জেনেরিক নাম'}</span>
+                    <span className="font-bold text-slate-700">{product.genericName || 'N/A'}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span className="text-xs text-slate-400 block font-bold uppercase">{language === 'en' ? 'Drug Class' : 'ওষুধের শ্রেণী'}</span>
+                    <span className="font-bold text-slate-700">{product.drugClass || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">{language === 'en' ? 'Dosage' : 'খাওয়ার নিয়ম'}</h3>
-                <p>{product.dosage || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
+            )}
+
+            {activeTab === 'uses' && (
+              <div className="space-y-4">
+                {product.uses || product.indication || product.indications ? (
+                  <p className="font-medium text-slate-800">
+                    {product.uses || product.indication || (Array.isArray(product.indications) ? product.indications.join(', ') : product.indications)}
+                  </p>
+                ) : (
+                  <p className="text-slate-400 italic">
+                    {language === 'en' ? 'Detailed usage information has not been added for this molecule yet. Please consult a registered physician.' : 'নির্দিষ্ট ব্যবহারবিধি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।'}
+                  </p>
+                )}
               </div>
-            </div>
-          )}
-          
-          {activeTab === 'side_effects' && (
-            <div className="space-y-4">
-              <p>{product.sideEffects || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
-            </div>
-          )}
-          
-          {activeTab === 'warnings' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">{language === 'en' ? 'Warnings' : 'সতর্কতা'}</h3>
-                <p>{product.warning || product.warnings || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
+            )}
+            
+            {activeTab === 'dosage' && (
+              <div className="space-y-4">
+                {product.dosage ? (
+                  <p className="font-medium text-slate-800">{product.dosage}</p>
+                ) : (
+                  <p className="text-slate-400 italic">
+                    {language === 'en' ? 'Dosage guidance has not been cataloged yet. Follow the directions on your prescription.' : 'খাওয়ার নিয়ম বিবরণী এখনো যুক্ত করা হয়নি। চিকিৎসকের নির্দেশনা অনুসরণ করুন।'}
+                  </p>
+                )}
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">{language === 'en' ? 'Precautions' : 'উপদেশ'}</h3>
-                <p>{product.precautions || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
+            )}
+            
+            {activeTab === 'side_effects' && (
+              <div className="space-y-4">
+                {product.sideEffects ? (
+                  <p className="font-medium text-slate-800">{product.sideEffects}</p>
+                ) : (
+                  <p className="text-slate-400 italic">
+                    {language === 'en' ? 'No adverse drug reactions or side effects cataloged for this product. Consult your pharmacist if you experience symptoms.' : 'এই ওষুধে সচরাচর পার্শ্বপ্রতিক্রিয়ার কোনো তথ্য যুক্ত করা হয়নি। কোনো সমস্যা অনুভূত হলে চিকিৎসকের শরণাপন্ন হোন।'}
+                  </p>
+                )}
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">{language === 'en' ? 'Pregnancy & Lactation' : 'গর্ভাবস্থা ও স্তন্যদানকালে'}</h3>
-                <p>{product.pregnancyWarning || product.lactationWarning || (language === 'en' ? 'This information has not been added yet. Consult a registered physician.' : 'এই তথ্যটি এখনো যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ নিন।')}</p>
+            )}
+            
+            {activeTab === 'warnings' && (
+              <div className="space-y-4">
+                {(product.warning || product.warnings || product.precautions || product.pregnancyWarning) ? (
+                  <div className="space-y-4">
+                    {(product.warning || product.warnings) && (
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-1">{language === 'en' ? 'Warnings' : 'সতর্কতা'}</h4>
+                        <p>{product.warning || product.warnings}</p>
+                      </div>
+                    )}
+                    {product.precautions && (
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-1">{language === 'en' ? 'Precautions' : 'সতর্কতা উপদেশ'}</h4>
+                        <p>{product.precautions}</p>
+                      </div>
+                    )}
+                    {product.pregnancyWarning && (
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-1">{language === 'en' ? 'Pregnancy & Lactation' : 'গর্ভাবস্থা ও স্তন্যদানকালে'}</h4>
+                        <p>{product.pregnancyWarning}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 italic">
+                    {language === 'en' ? 'No specific clinical warnings or pregnancy warnings cataloged. Always check with your physician.' : 'কোনো বিশেষ সতর্কবার্তা যুক্ত করা হয়নি। চিকিৎসকের পরামর্শ অনুসরণ করুন।'}
+                  </p>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {activeTab === 'storage' && (
+              <div className="space-y-4">
+                {product.storage || product.storageConditions ? (
+                  <p className="font-medium text-slate-800">{product.storage || product.storageConditions}</p>
+                ) : (
+                  <p className="font-medium text-slate-800">
+                    {language === 'en' 
+                      ? 'Store in a cool and dry place below 30°C. Protect from light and moisture. Keep out of reach of children.' 
+                      : '৩০ ডিগ্রি সেলসিয়াসের নিচে ঠান্ডা ও শুষ্ক স্থানে সংরক্ষণ করুন। আলো এবং আর্দ্রতা থেকে দূরে রাখুন। শিশুদের নাগালের বাইরে রাখুন।'}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="space-y-4">
+                {product.reviews && product.reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {product.reviews.map((r, idx) => (
+                      <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-bold text-slate-800">{r.reviewerName || 'Customer'}</span>
+                          <span className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-slate-600">{r.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 italic">
+                    {language === 'en' ? 'No patient reviews have been submitted for this medicine yet.' : 'এই ওষুধের জন্য এখনো কোনো রিভিউ দেওয়া হয়নি।'}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {alternatives.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+      {/* Interactive Generic Savings Meter & Cheaper Alternatives */}
+      {sortedAlternatives.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+          
+          {/* Savings Gauge */}
+          {hasSavings && (
+            <div className="glass-panel rounded-2xl p-6 mb-8 border border-emerald-500/10 shadow-inner flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-emerald-500/5 to-teal-500/5">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 flex items-center justify-center text-emerald-600 font-extrabold text-xl animate-pulse">
+                  {savingsPercent}%
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg text-slate-800 flex items-center gap-2">
+                    <span>{language === 'en' ? 'Generic Savings Meter' : 'জেনেরিক সাশ্রয় মিটার'}</span>
+                    <Badge variant="success" className="text-[10px] bg-emerald-500 text-white font-bold py-0.5 px-2">
+                      {language === 'en' ? 'Best Switch' : 'সেরা বিকল্প'}
+                    </Badge>
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {language === 'en'
+                      ? `Switching to the cheapest available in-stock brand saves you up to ${savingsPercent}% (${formatPrice(savingsAmount)} per pack).`
+                      : `সবচেয়ে সাশ্রয়ী ইন-স্টক ব্র্যান্ডে স্যুইচ করলে আপনার সর্বোচ্চ ${savingsPercent}% (${formatPrice(savingsAmount)} প্রতি প্যাক) অর্থ সাশ্রয় হবে।`}
+                  </p>
+                </div>
+              </div>
+              <div className="w-full md:w-48 bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${savingsPercent}%` }}></div>
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <span>{language === 'en' ? 'Alternative Brands' : 'বিকল্প ব্র্যান্ড'}</span>
-              <Badge variant="success" className="text-xs font-semibold py-0.5 px-2">
+            <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+              <span>{language === 'en' ? 'Alternative Brands' : 'বিকল্প ব্র্যান্ডসমূহ'}</span>
+              <Badge variant="success" className="text-xs font-semibold py-0.5 px-2.5">
                 {language === 'en' ? 'Same Molecule' : 'একই জেনেরিক উপাদান'}
               </Badge>
             </h2>
-            <p className="text-gray-500 mt-1">
+            <p className="text-slate-500 mt-1">
               {language === 'en'
-                ? 'Equivalent medicines with the exact same active generic ingredient, dosage form, and strength.'
-                : 'হুবহু একই জেনেরিক উপাদান, ডোজেজ ফর্ম এবং শক্তির সমমানের বিকল্প ওষুধসমূহ।'}
+                ? 'Equivalent medicines with the exact same active generic molecule, dosage form, and strength, sorted by availability and best savings.'
+                : 'একই জেনেরিক উপাদান, ডোজেজ ফর্ম এবং শক্তির সমমানের বিকল্প ওষুধসমূহ (ইন-স্টক এবং সাশ্রয়ী দামের ভিত্তিতে সাজানো)।'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {alternatives.map((alt) => {
+            {sortedAlternatives.map((alt) => {
               const altPrice = productPrice(alt);
-              const origPrice = productPrice(product);
-              const diff = origPrice - altPrice;
-              const savingsPercent = origPrice > 0 ? Math.round((diff / origPrice) * 100) : 0;
+              const diff = currentPrice - altPrice;
+              const altSavingsPercent = currentPrice > 0 && diff > 0 ? Math.round((diff / currentPrice) * 100) : 0;
               const altDisplayName = language === 'bn' && alt.nameBn ? alt.nameBn : alt.name;
               const altInStock = (alt.stockQuantity || 0) > 0;
 
               return (
-                <div key={alt.id || alt._id} className="border border-gray-200 rounded-xl p-4 flex gap-4 hover:border-[var(--color-primary)] transition-all">
-                  <div className="w-20 h-20 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center p-2">
-                    <img
-                      src={productImage(alt)}
+                <div key={alt.id || alt._id} className="border border-slate-200 rounded-xl p-4 flex gap-4 hover:border-primary hover:shadow-sm transition-all bg-white">
+                  <div className="w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 flex items-center justify-center p-2 border border-slate-100">
+                    <ProductImage
+                      product={alt}
                       alt={altDisplayName}
-                      className="max-w-full max-h-full object-contain"
-                      onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+                      className="max-w-full max-h-full"
                     />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-bold text-gray-900 truncate">
-                          {altDisplayName} <span className="text-gray-500 font-normal text-sm">{alt.strength}</span>
+                        <h3 className="font-bold text-slate-800 truncate">
+                          {altDisplayName} <span className="text-slate-400 font-normal text-sm">{alt.strength}</span>
                         </h3>
-                        {savingsPercent > 0 && (
-                          <Badge variant="offer" className="shrink-0 text-xs font-semibold py-0.5 px-2">
-                            {language === 'en' ? `Save ${savingsPercent}%` : `${savingsPercent}% সাশ্রয়`}
+                        {altSavingsPercent > 0 && (
+                          <Badge variant="offer" className="shrink-0 text-xs font-extrabold py-0.5 px-2 bg-emerald-500 text-white rounded">
+                            {language === 'en' ? `Save ${altSavingsPercent}%` : `${altSavingsPercent}% সাশ্রয়`}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{alt.manufacturer?.name || alt.manufacturer}</p>
-                      <p className="text-xs text-[var(--color-primary)] font-medium mt-1">{alt.dosageForm}</p>
+                      <p className="text-xs text-slate-400 truncate mt-0.5">{alt.manufacturer?.name || alt.manufacturer}</p>
+                      <p className="text-xs text-primary font-bold mt-1">{alt.dosageForm}</p>
                     </div>
 
                     <div className="flex items-center justify-between mt-4">
                       <div>
-                        <span className="text-lg font-bold text-[var(--color-primary)]">{formatPrice(altPrice)}</span>
+                        <span className="text-lg font-extrabold text-slate-800">{formatPrice(altPrice)}</span>
                         {alt.discount > 0 && (
-                          <span className="text-xs text-gray-400 line-through ml-1">{formatPrice(alt.mrp)}</span>
+                          <span className="text-xs text-slate-400 line-through ml-1">{formatPrice(alt.mrp)}</span>
                         )}
                       </div>
 
@@ -288,13 +428,13 @@ const ProductDetail = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs py-1.5 hover:bg-[var(--color-primary)] hover:text-white"
+                            className="text-xs py-1.5 hover:bg-primary hover:text-white rounded-lg border-emerald-500 text-emerald-600"
                             onClick={() => addProductToCart(alt)}
                           >
                             {t('common.addToCart')}
                           </Button>
                         ) : (
-                          <span className="text-xs text-gray-400 font-medium bg-gray-100 py-1 px-2.5 rounded-full">{t('common.outOfStock')}</span>
+                          <span className="text-xs text-slate-400 font-semibold bg-slate-100 py-1 px-3 rounded-full">{t('common.outOfStock')}</span>
                         )}
                       </div>
                     </div>
@@ -310,3 +450,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+

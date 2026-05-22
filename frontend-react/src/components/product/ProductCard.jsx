@@ -13,6 +13,8 @@ import {
   productRouteId,
 } from '../../utils/apiData';
 
+import ProductImage from './ProductImage';
+
 const ProductCard = ({ product }) => {
   const { name, nameBn, genericName, strength, manufacturer, mrp, discount } = product;
   const { language, t } = useLanguage();
@@ -24,19 +26,18 @@ const ProductCard = ({ product }) => {
   const displayName = language === 'bn' && nameBn ? nameBn : name;
 
   return (
-    <Card hover className="flex flex-col h-full relative group">
+    <Card hover className="flex flex-col h-full relative group shadow-sm bg-white rounded-xl">
       {requiresPrescription && (
         <div className="absolute top-2 right-2 z-10">
-          <Badge variant="alert" className="text-[10px]">Rx</Badge>
+          <Badge variant="danger" className="text-[10px] px-2 py-0.5 font-bold">Rx</Badge>
         </div>
       )}
 
-      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] bg-gray-50 rounded mb-3 overflow-hidden">
-        <img
-          src={productImage(product)}
+      <Link to={detailPath} className="block flex-shrink-0 relative pt-[100%] rounded-xl mb-3 overflow-hidden">
+        <ProductImage
+          product={product}
           alt={displayName}
-          className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
-          onError={(event) => { event.currentTarget.src = '/favicon.svg'; }}
+          className="absolute inset-0 w-full h-full"
         />
       </Link>
 

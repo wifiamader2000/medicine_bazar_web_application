@@ -37,6 +37,8 @@ import Settings from './pages/admin/Settings';
 import AccountingDashboard from './pages/admin/AccountingDashboard';
 import DayClosing from './pages/admin/DayClosing';
 import CustomerCRM from './pages/admin/CustomerCRM';
+import OrdersManager from './pages/admin/OrdersManager';
+import InvoicesManager from './pages/admin/InvoicesManager';
 import ExportCenter from './pages/admin/ExportCenter';
 import NotificationTemplates from './pages/admin/NotificationTemplates';
 import PaymentGateways from './pages/admin/PaymentGateways';
@@ -82,6 +84,8 @@ const App = () => {
           <Route path="accounting" element={<AccountingDashboard />} />
           <Route path="day-closing" element={<DayClosing />} />
           <Route path="customers" element={<CustomerCRM />} />
+          <Route path="orders" element={<OrdersManager />} />
+          <Route path="invoices" element={<InvoicesManager />} />
           <Route path="export" element={<ExportCenter />} />
           <Route path="notifications" element={<NotificationTemplates />} />
           <Route path="payment-gateways" element={<PaymentGateways />} />

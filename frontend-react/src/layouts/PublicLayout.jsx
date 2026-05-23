@@ -50,9 +50,7 @@ const PublicLayout = () => {
           
           {/* Left: Logo */}
           <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-10 h-10 cta-gradient text-white rounded-xl flex items-center justify-center font-black text-xl shadow-md group-hover:scale-105 transition-all">
-              MB
-            </div>
+            <img src="/medicine-bazar-logo.svg" alt="Medicine Bazar" className="w-11 h-11 rounded-xl shadow-md group-hover:scale-105 transition-all" />
             <span className="text-2xl font-black text-slate-800 tracking-tight hidden sm:block">
               Medicine<span className="text-[var(--color-primary)]">Bazar</span>
             </span>
@@ -174,9 +172,7 @@ const PublicLayout = () => {
             {/* Column 1: Info & Brand */}
             <div className="space-y-5">
               <Link to="/" className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 cta-gradient text-white rounded-lg flex items-center justify-center font-bold shadow-md">
-                  MB
-                </div>
+                <img src="/medicine-bazar-logo.svg" alt="Medicine Bazar" className="w-9 h-9 rounded-lg shadow-md" />
                 <span className="text-xl font-extrabold text-white tracking-tight">
                   Medicine<span className="text-[var(--color-primary)]">Bazar</span>
                 </span>

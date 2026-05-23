@@ -43,7 +43,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10">
         <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm">MB</div>
+          <img src="/medicine-bazar-logo.svg" alt="Medicine Bazar" className="w-9 h-9 rounded-lg shadow-sm" />
           <h1 className="font-bold text-gray-900 tracking-tight">Admin System</h1>
         </div>
         

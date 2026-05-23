@@ -1,5 +1,10 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+
+const rootPath = path.join(__dirname, '../..');
+const reactDistPath = path.join(rootPath, 'frontend-react', 'dist');
+const legacyFrontendPath = path.join(rootPath, 'frontend');
 
 const config = {
   env: process.env.NODE_ENV || 'development',
@@ -39,11 +44,13 @@ const config = {
   },
 
   paths: {
-    root: path.join(__dirname, '../..'),
-    frontend: path.join(__dirname, '../../frontend'),
-    database: path.join(__dirname, '../../database'),
-    uploads: path.join(__dirname, '../../uploads'),
-    logs: path.join(__dirname, '../../logs'),
+    root: rootPath,
+    frontend: fs.existsSync(path.join(reactDistPath, 'index.html')) ? reactDistPath : legacyFrontendPath,
+    legacyFrontend: legacyFrontendPath,
+    reactDist: reactDistPath,
+    database: path.join(rootPath, 'database'),
+    uploads: path.join(rootPath, 'uploads'),
+    logs: path.join(rootPath, 'logs'),
   },
 
   security: {
